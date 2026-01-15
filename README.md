@@ -81,6 +81,7 @@
 | **Latte** | [Latent Diffusion Transformer for Video](https://arxiv.org/abs/2401.03048) | [GitHub](https://github.com/Vchitect/Latte) | First open-source video DiT |
 | **Open-Sora** | [Democratizing Efficient Video Production](https://arxiv.org/abs/2403.06394) | [GitHub](https://github.com/hpcaitech/Open-Sora) | Open reproduction of Sora |
 | **Open-Sora-Plan** | [Open-Sora Plan](https://github.com/PKU-YuanGroup/Open-Sora-Plan) | [GitHub](https://github.com/PKU-YuanGroup/Open-Sora-Plan) | Alternative open-source Sora |
+| **LTX 2.0** | [LTX-2 Model](https://ltx.io/model) | [GitHub](https://github.com/Lightricks/LTX-2) | 19B DiT with audio-video sync |
 
 ### U-Net Based Diffusion
 
@@ -121,6 +122,7 @@
 | **CogVideoX** | Zhipu AI | Open Source | [GitHub](https://github.com/THUDM/CogVideo) | GLM-based, 6B & 5B models |
 | **Mochi 1** | Genmo | Open Source | [GitHub](https://github.com/genmoai/mochi) | High quality open T2V |
 | **HunyuanVideo** | Tencent | Open Source | [GitHub](https://github.com/Tencent/HunyuanVideo) | 13B DiT model |
+| **LTX 2.0** | Lightricks | Open Source | [GitHub](https://github.com/Lightricks/LTX-2) | 19B DiT, 4K+audio, up to 20s |
 
 ### Image-to-Video (I2V)
 
@@ -304,6 +306,7 @@
 | **Alibaba** | I2VGen-XL, EMO, Animate Anyone | I2V, avatar |
 | **Tencent** | HunyuanVideo | Open-source T2V |
 | **Genmo** | Mochi 1 | Open-source T2V |
+| **Lightricks** | LTX 2.0 | 4K audio-video generation |
 
 ---
 
