@@ -123,6 +123,7 @@
 | **Mochi 1** | Genmo | Open Source | [GitHub](https://github.com/genmoai/mochi) | High quality open T2V |
 | **HunyuanVideo** | Tencent | Open Source | [GitHub](https://github.com/Tencent/HunyuanVideo) | 13B DiT model |
 | **LTX 2.0** | Lightricks | Open Source | [GitHub](https://github.com/Lightricks/LTX-2) | 19B DiT, 4K+audio, up to 20s |
+| **Wan 2.6** | Alibaba | Open Source | [Link](https://wan.video/) | 1080p, 15s, multi-shot+audio |
 
 ### Image-to-Video (I2V)
 
