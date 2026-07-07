@@ -30,9 +30,12 @@
   - [Inference Optimization](#inference-optimization)
   - [Serving Frameworks](#serving-frameworks)
 - [Advanced Topics](#advanced-topics)
+  - [Post-Training & Alignment (RLHF)](#post-training--alignment-rlhf)
+  - [Few-Step Distillation & Real-Time Generation](#few-step-distillation--real-time-generation)
   - [Temporal Consistency](#temporal-consistency)
-  - [Long Video Generation](#long-video-generation)
+  - [Long Video & Multi-Shot Generation](#long-video--multi-shot-generation)
   - [4D Generation (3D + Time)](#4d-generation-3d--time)
+- [Research Notes](#research-notes)
 - [Resources](#resources)
   - [Datasets](#datasets)
   - [Benchmarks](#benchmarks)
@@ -118,12 +121,15 @@
 | **Gen-3 Alpha** | Runway | Proprietary | [Link](https://runwayml.com/) | Commercial T2V leader |
 | **Pika** | Pika Labs | Proprietary | [Link](https://pika.art/) | Fast iteration, good motion |
 | **Kling** | Kuaishou | Proprietary | [Link](https://klingai.com/) | Strong Chinese T2V model |
+| **Seedance** | ByteDance | Proprietary | [1.0 Report](https://arxiv.org/abs/2506.09113) / [1.5 pro Report](https://arxiv.org/abs/2512.13507) | #1 on Artificial Analysis T2V/I2V arenas; native multi-shot, AV joint gen (1.5+) |
 | **Lumiere** | Google | Research | [Paper](https://lumiere-video.github.io/) | Space-time diffusion |
 | **CogVideoX** | Zhipu AI | Open Source | [GitHub](https://github.com/THUDM/CogVideo) | GLM-based, 6B & 5B models |
 | **Mochi 1** | Genmo | Open Source | [GitHub](https://github.com/genmoai/mochi) | High quality open T2V |
 | **HunyuanVideo** | Tencent | Open Source | [GitHub](https://github.com/Tencent/HunyuanVideo) | 13B DiT model |
 | **LTX 2.0** | Lightricks | Open Source | [GitHub](https://github.com/Lightricks/LTX-2) | 19B DiT, 4K+audio, up to 20s |
-| **Wan 2.6** | Alibaba | Open Source | [Link](https://wan.video/) | 1080p, 15s, multi-shot+audio |
+| **Wan 2.2** | Alibaba | Open Source | [GitHub](https://github.com/Wan-Video/Wan2.2) | MoE DiT (27B/14B active), Apache 2.0; strongest open-weights base |
+| **Wan 2.6** | Alibaba | Proprietary (API) | [Link](https://wan.video/) | 1080p, 15s, multi-shot+audio; weights not released |
+| **HunyuanVideo 1.5** | Tencent | Open Source | [GitHub](https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5) | 8.3B DiT; full open post-training recipe (SFT+DPO+MixGRPO) |
 
 ### Image-to-Video (I2V)
 
@@ -213,6 +219,32 @@
 
 ## Advanced Topics
 
+### Post-Training & Alignment (RLHF)
+
+*The main quality lever separating frontier commercial models (Seedance, Veo, Kling) from open-source bases — reward models + preference optimization for video diffusion.*
+
+| Name | Paper | Code | Notes |
+| :--- | :--- | :--- | :--- |
+| **VideoAlign / VideoReward** | [Improving Video Generation with Human Feedback](https://arxiv.org/abs/2501.13918) | [GitHub](https://github.com/KwaiVGI/VideoAlign) | 182K preference triplets; multi-dim RM (VQ/MQ/TA); Flow-DPO / Flow-RWR / Flow-NRG (NeurIPS 2025) |
+| **VisionReward** | [Fine-Grained Multi-Dimensional Preference Learning](https://arxiv.org/abs/2412.21059) | [GitHub](https://github.com/THUDM/VisionReward) | Interpretable checklist RM (64 binary questions); MPO dominant-pair training |
+| **DanceGRPO** | [Unleashing GRPO on Visual Generation](https://arxiv.org/abs/2505.07818) | [GitHub](https://github.com/XueZeyue/DanceGRPO) | Online GRPO for diffusion & rectified flow; +181% motion quality on HunyuanVideo |
+| **Flow-GRPO** | [Training Flow Matching Models via Online RL](https://arxiv.org/abs/2505.05470) | [GitHub](https://github.com/yifan123/flow_grpo) | ODE→SDE conversion + denoising reduction for RL on flow models |
+| **VideoDPO** | [Omni-Preference Alignment for Video Diffusion](https://arxiv.org/abs/2412.14167) | [GitHub](https://github.com/CIntellifusion/VideoDPO) | Fully automatic preference pairs (OmniScore); runs on 4×A100 |
+| **Seedance 1.0** | [Technical Report](https://arxiv.org/abs/2506.09113) | - | Reference recipe: 3 specialized RMs (foundational/motion/aesthetic), direct reward maximization |
+| **HunyuanVideo 1.5** | [Technical Report](https://arxiv.org/abs/2511.18870) | [GitHub](https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5) | Open post-training blueprint: SFT → offline DPO → online MixGRPO with VLM reward |
+| **ContentV** | [Efficient Training with Limited Compute](https://arxiv.org/abs/2506.05343) | [GitHub](https://github.com/bytedance/ContentV) | Annotation-free RLHF via differentiable reward backprop; 85.14 VBench on modest compute |
+
+### Few-Step Distillation & Real-Time Generation
+
+*Closing the inference-speed gap: from 50-step diffusion to real-time streaming.*
+
+| Name | Paper | Code | Notes |
+| :--- | :--- | :--- | :--- |
+| **Self Forcing** | [Bridging the Train-Test Gap in Autoregressive Video Diffusion](https://arxiv.org/abs/2506.08009) | [GitHub](https://github.com/guandeh17/Self-Forcing) | AR rollout + KV cache + DMD; 17 FPS on one H100; converges in ~4 H100-days on Wan2.1-1.3B |
+| **Seaweed-APT** | [Adversarial Post-Training for One-Step Video Generation](https://arxiv.org/abs/2501.08316) | - | One-step 720p24 real-time generation (ICML 2025) |
+| **CausVid** | [From Slow Bidirectional to Fast Autoregressive](https://arxiv.org/abs/2412.07772) | [GitHub](https://github.com/tianweiy/CausVid) | Bidirectional teacher → causal student distillation |
+| **Hyper-SD / TSCD** | [Trajectory Segmented Consistency Distillation](https://arxiv.org/abs/2404.13686) | [HuggingFace](https://huggingface.co/ByteDance/Hyper-SD) | The distillation family behind Seedance's ~10x speedup |
+
 ### Temporal Consistency
 
 *Ensuring objects don't morph randomly over time - the core challenge of video generation.*
@@ -221,12 +253,14 @@
 - 📖 [VideoComposer: Compositional Video Synthesis](https://arxiv.org/abs/2306.02018)
 - 📖 [Make-Your-Video: Customized Video Generation](https://arxiv.org/abs/2306.00943)
 
-### Long Video Generation
+### Long Video & Multi-Shot Generation
 
-*Moving beyond 4-10 seconds to minutes of coherent video.*
+*Moving beyond 4-10 seconds to minutes of coherent, multi-shot narrative video.*
 
 | Name | Paper | Code | Notes |
 | :--- | :--- | :--- | :--- |
+| **LCT** | [Long Context Tuning for Video Generation](https://arxiv.org/abs/2503.10589) | [Project](https://guoyww.github.io/projects/long-context-video/) | Single-shot DiT → scene-level multi-shot via context expansion, no new params (ICCV 2025) |
+| **HoloCine** | [Holistic Generation of Cinematic Multi-Shot Narratives](https://arxiv.org/abs/2510.20822) | [GitHub](https://github.com/yihao-meng/HoloCine) | Wan 2.2 fine-tuned on 400K multi-shot samples (CVPR 2026) |
 | **StreamingT2V** | [Streaming Video Synthesis](https://arxiv.org/abs/2403.14773) | [GitHub](https://github.com/Picsart-AI-Research/StreamingT2V) | Infinite length generation |
 | **FreeNoise** | [Tuning-free Long Video](https://arxiv.org/abs/2310.15169) | [GitHub](https://github.com/AILab-CVC/FreeNoise) | Extended context window |
 | **Gen-L-Video** | [Multitext to Long Video](https://arxiv.org/abs/2305.18264) | [GitHub](https://github.com/G-U-N/Gen-L-Video) | Story-based generation |
@@ -241,6 +275,14 @@
 | **4D-fy** | [Text-to-4D via Hybrid SDS](https://arxiv.org/abs/2311.17984) | [GitHub](https://github.com/sherwinbahmani/4dfy) | 4D from text |
 | **Consistent4D** | [Consistent Dynamic 3D](https://arxiv.org/abs/2311.02848) | [GitHub](https://github.com/yanqinJiang/Consistent4D) | Video to 4D |
 | **GaussianFlow** | [Splatting for 4D Reconstruction](https://arxiv.org/abs/2312.03431) | [GitHub](https://github.com/Zerg-Overmind/GaussianFlow) | High-quality 4D |
+
+---
+
+## Research Notes
+
+*In-house deep-dive analyses (sources cited, claims adversarially verified where marked).*
+
+- 📝 [Seedance vs 开源视频模型(Wan 2.2 / LTX)差距根因分析与逼近路线](research/seedance-gap-analysis.md) (2026-07) - *Root-cause analysis of the Seedance-vs-open-source quality gap: post-training (multi-dim reward-model RLHF) and data curation dominate, not architecture. Includes a prioritized roadmap (RM → DPO/GRPO → SFT → distillation → multi-shot) with H100-day budget estimates.*
 
 ---
 
