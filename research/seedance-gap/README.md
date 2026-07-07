@@ -2,10 +2,23 @@
 
 > **English abstract** — A root-cause analysis of the quality gap between ByteDance Seedance (1.0 / 1.5 pro) and open-source video generation models (Wan 2.2, LTX-Video/LTX-2, HunyuanVideo). Main finding: the gap is driven primarily by **post-training (SFT + multi-dimensional reward-model RLHF) and data curation**, not architecture. Evidence: Wan's technical reports disclose no RLHF stage; DanceGRPO shows +181% motion quality from online RL on an open model; HunyuanVideo 1.5 with a full post-training recipe already beats Seedance Pro in 720p T2V human GSB evals. Includes a prioritized, budget-estimated roadmap (reward models → DPO/GRPO → SFT curation → few-step distillation → multi-shot tuning) for approaching Seedance-1.5-pro-level quality on open bases within hundreds-to-thousands of H100-days. All claims cite primary technical reports and 2025–2026 papers.
 
-- 日期:2026-07-06
+- 日期:2026-07-06(专题化 2026-07-07)
 - 方法:多角度检索 → 抓取一手来源 → 逐条对抗验证(3 票制)→ 人工综合
 - 验证标注:✅ = 3/3 对抗验证通过;🟡 = 一手来源(技术报告/论文)抓取核实,未完成三票对抗验证;❌ = 已证伪
 - 受众:熟悉 Wan/LTX 的 video AIGC 研究者
+
+## 专题目录
+
+本页为综合结论(TL;DR + 全景);各子篇展开底层素材与可执行细节:
+
+| 篇 | 内容 |
+|---|---|
+| [01 — 差距量化](01-benchmark-gap.md) | AA 盲测 Elo 全表、GSB 人评、VBench 锚点、时间线、评测集设计启示 |
+| [02 — Seedance 技术配方拆解](02-seedance-recipe.md) | 数据管线、MM-RoPE/解耦注意力、三 RM RLHF 细节、TSCD 蒸馏栈、1.5 pro 增量、复现要点清单 |
+| [03 — 开源模型现状](03-open-source-landscape.md) | Wan 2.1/2.2、LTX-Video/LTX-2、HunyuanVideo 1.5、ContentV 逐个拆解 + 横向对比表 |
+| [04 — 后训练方法工具箱](04-posttraining-methods.md) | VideoAlign/VisionReward、VideoDPO/Flow-DPO/Flow-GRPO/DanceGRPO 全参数与实测收益、reward hacking 坑与对策、选型建议 |
+| [05 — 蒸馏与多镜头](05-distillation-multishot.md) | Self-Forcing/APT/CausVid/TSCD 成本与效果;LCT/HoloCine 多镜头路线与实施建议 |
+| [06 — 根因分解与路线图](06-roadmap-feasibility.md) | 根因表、可行性/预算评估、P0–P3 路线图、底座选型、风险登记 |
 
 ---
 

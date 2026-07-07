@@ -282,7 +282,7 @@
 
 *In-house deep-dive analyses (sources cited, claims adversarially verified where marked).*
 
-- 📝 [Seedance vs 开源视频模型(Wan 2.2 / LTX)差距根因分析与逼近路线](research/seedance-gap-analysis.md) (2026-07) - *Root-cause analysis of the Seedance-vs-open-source quality gap: post-training (multi-dim reward-model RLHF) and data curation dominate, not architecture. Includes a prioritized roadmap (RM → DPO/GRPO → SFT → distillation → multi-shot) with H100-day budget estimates.*
+- 📂 [**Seedance vs Open-Source Gap** (topic series)](research/seedance-gap/) (2026-07) - *Root-cause analysis of the Seedance-vs-open-source quality gap: post-training (multi-dim reward-model RLHF) and data curation dominate, not architecture. 6-part series: [benchmark gap](research/seedance-gap/01-benchmark-gap.md) · [Seedance recipe](research/seedance-gap/02-seedance-recipe.md) · [open-source landscape](research/seedance-gap/03-open-source-landscape.md) · [post-training methods](research/seedance-gap/04-posttraining-methods.md) · [distillation & multi-shot](research/seedance-gap/05-distillation-multishot.md) · [roadmap & feasibility](research/seedance-gap/06-roadmap-feasibility.md).*
 
 ---
 
