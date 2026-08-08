@@ -66,6 +66,10 @@ Artificial Analysis video arena 用盲测成对人类偏好投票计算 Elo,是�
 
 注意:VBench 与人类偏好 Elo 相关性有限(Wan2.1 VBench 高于 Sora 但 arena 表现不及),**内部评测应以多维盲测胜率为主、VBench 为辅**。
 
+## 3.5 ⚠️ 2026-08 更新:MiniMax H3 改写开源格局
+
+2026-08-08 AA T2V(with audio)快照:**Gemini Omni Flash 1244 > MiniMax H3 1240(开源权重!)> Seedance 2.0 720p 1224** > Wan2.7-260612 1161 > … > LTX-2.3 Fast 980。开源权重最强从 LTX-2.3 的 ~980 跳到 H3 的 1240(+260),"开源 vs 前沿 ≈ 250 Elo"的本篇核心结论就此作废;H3 并在 Video Editing 维度登顶(#1,Elo 1130,开源权重首次)。注意:榜上 H3 为 API 全链路,自部署 H3-Base 只有 768p(无 Context-IR/2K),另 Seedance 2.5(原生 4K/30s)已发 API 未上榜。完整分析与对路线的影响见 [07 篇](07-minimax-h3.md)。
+
 ## 4. 对评测集设计的启示
 
 1. 必须分维度:运动质量 / 物理一致性 / prompt 遵循(含多主体)/ 美学 / 多镜头叙事 / I2V 保真,单一综合分会掩盖真实差距结构(HYV1.5 T2V 赢 Seedance 但 I2V 输,就是维度分化的实例)。

@@ -19,6 +19,7 @@
 | [04 — 后训练方法工具箱](04-posttraining-methods.md) | VideoAlign/VisionReward、VideoDPO/Flow-DPO/Flow-GRPO/DanceGRPO 全参数与实测收益、reward hacking 坑与对策、选型建议 |
 | [05 — 蒸馏与多镜头](05-distillation-multishot.md) | Self-Forcing/APT/CausVid/TSCD 成本与效果;LCT/HoloCine 多镜头路线与实施建议 |
 | [06 — 根因分解与路线图](06-roadmap-feasibility.md) | 根因表、可行性/预算评估、P0–P3 路线图、底座选型、风险登记 |
+| [07 — MiniMax H3](07-minimax-h3.md) | **2026-08 更新**:H3 开放权重(T2V Elo 1240,开源断层第一)——横评、部署要求、算法公开度、license 红线、对路线的影响 |
 
 ---
 
@@ -29,6 +30,7 @@
 3. **推理速度差距最便宜可解。** Seedance 的 ~10x 加速 = TSCD 蒸馏 4x + 瘦 VAE decoder 2x + 系统优化(5s 1080p 41.4s @L20)✅。开源侧 Self-Forcing 在 Wan2.1-1.3B 上蒸馏只需 ~4 H100-天,单卡 17 FPS 且 VBench 不降 🟡。
 4. **多镜头叙事可以后训练补齐,不必重预训练。** Seedance 的原生多镜头来自 MM-RoPE + 多镜头数据(per-shot caption)✅;开源已有 LCT(单镜头模型 → 场景级多镜头,不加参数)和 HoloCine(Wan 2.2 + 40 万多镜头样本微调,CVPR 2026)🟡。
 5. **难以弥补的是最前沿一代的综合差距。** 当前(2026 年中)Artificial Analysis 榜:Seedance 2.0 Elo 1222 遥遥领先;最强开源权重 LTX-2.3 ≈ 961–976,差 ~250 Elo;而上一代 Seedance 1.5 pro 已跌至 Elo 1000,LTX-2.3 在 I2V 上距它只差 ~50 Elo 🟡。**现实目标:12 个月内用数百–上千 H100-天,把开源底座后训练到 Seedance 1.5 pro 水平;Seedance 2.0 水平受限于预训练代差,不设为目标。**
+   > ⚠️ **2026-08 更新**:本条差距叙事已被 MiniMax H3 改写——H3 开放权重(08-03)后 T2V Elo 1240,超 Seedance 2.0(1224)、距全场第一 Gemini Omni Flash(1244)仅 4 Elo,开源内部断层领先 LTX-2.3 约 260 Elo。但自部署有 768p 天花板(Context-IR/2K 再生成仍 API-only)、训练配方未披露、license 有地域排除与产出使用限制。详见 [07 篇](07-minimax-h3.md)。
 
 ---
 
