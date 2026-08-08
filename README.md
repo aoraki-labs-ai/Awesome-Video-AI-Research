@@ -130,6 +130,7 @@
 | **Wan 2.2** | Alibaba | Open Source | [GitHub](https://github.com/Wan-Video/Wan2.2) | MoE DiT (27B/14B active), Apache 2.0; strongest open-weights base |
 | **Wan 2.6** | Alibaba | Proprietary (API) | [Link](https://wan.video/) | 1080p, 15s, multi-shot+audio; weights not released |
 | **HunyuanVideo 1.5** | Tencent | Open Source | [GitHub](https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5) | 8.3B DiT; full open post-training recipe (SFT+DPO+MixGRPO) |
+| **MiniMax H3** | MiniMax | Open Weights | [HuggingFace](https://huggingface.co/MiniMaxAI/MiniMax-H3) | 33B omni-modal, 2K/15s/native stereo; #1 open-weights on AA arena (community license, restrictions apply) |
 
 ### Image-to-Video (I2V)
 
@@ -282,7 +283,7 @@
 
 *In-house deep-dive analyses (sources cited, claims adversarially verified where marked).*
 
-- 📂 [**Seedance vs Open-Source Gap** (topic series)](research/seedance-gap/) (2026-07) - *Root-cause analysis of the Seedance-vs-open-source quality gap: post-training (multi-dim reward-model RLHF) and data curation dominate, not architecture. 6-part series: [benchmark gap](research/seedance-gap/01-benchmark-gap.md) · [Seedance recipe](research/seedance-gap/02-seedance-recipe.md) · [open-source landscape](research/seedance-gap/03-open-source-landscape.md) · [post-training methods](research/seedance-gap/04-posttraining-methods.md) · [distillation & multi-shot](research/seedance-gap/05-distillation-multishot.md) · [roadmap & feasibility](research/seedance-gap/06-roadmap-feasibility.md).*
+- 📂 [**Seedance vs Open-Source Gap** (topic series)](research/seedance-gap/) (2026-07) - *Root-cause analysis of the Seedance-vs-open-source quality gap: post-training (multi-dim reward-model RLHF) and data curation dominate, not architecture. 7-part series (updated 2026-08): [benchmark gap](research/seedance-gap/01-benchmark-gap.md) · [Seedance recipe](research/seedance-gap/02-seedance-recipe.md) · [open-source landscape](research/seedance-gap/03-open-source-landscape.md) · [post-training methods](research/seedance-gap/04-posttraining-methods.md) · [distillation & multi-shot](research/seedance-gap/05-distillation-multishot.md) · [roadmap & feasibility](research/seedance-gap/06-roadmap-feasibility.md) · [MiniMax H3](research/seedance-gap/07-minimax-h3.md).*
 
 ---
 
@@ -350,6 +351,7 @@
 | **Tencent** | HunyuanVideo | Open-source T2V |
 | **Genmo** | Mochi 1 | Open-source T2V |
 | **Lightricks** | LTX 2.0 | 4K audio-video generation |
+| **MiniMax** | Hailuo, H3 | Omni-modal video+audio, open weights |
 
 ---
 
