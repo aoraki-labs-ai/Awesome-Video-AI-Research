@@ -20,6 +20,7 @@
 | [05 — 蒸馏与多镜头](05-distillation-multishot.md) | Self-Forcing/APT/CausVid/TSCD 成本与效果;LCT/HoloCine 多镜头路线与实施建议 |
 | [06 — 根因分解与路线图](06-roadmap-feasibility.md) | 根因表、可行性/预算评估、P0–P3 路线图、底座选型、风险登记 |
 | [07 — MiniMax H3](07-minimax-h3.md) | **2026-08 更新**:H3 开放权重(T2V Elo 1240,开源断层第一)——横评、部署要求、算法公开度、license 红线、对路线的影响 |
+| [08 — 评价闭环](08-evaluation-loop.md) | 后训练迭代的质量评价方案:三层评价栈(客观检测器 + 校准 VLM judge + 人评锚)、benchmark 盘点、judge 校准纪律(TPR/TNR、每维独立、rubric 学习) |
 
 ---
 
