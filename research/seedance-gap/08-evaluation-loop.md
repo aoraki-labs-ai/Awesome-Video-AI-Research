@@ -28,7 +28,7 @@
 | VBench / [VBench-2.0](https://arxiv.org/abs/2503.21755) | 2.0 = 5 大类 18 细维:人体保真、可控性、创意、**物理、常识** | 通才(VLM/LLM)+ 专才(异常检测器)混合,有人工标注对齐;公共榜单已趋饱和,适合做回归子集而非目标 |
 | [Video-Bench](https://arxiv.org/abs/2504.04907) | 首个全维度 MLLM 评审的视频生成 benchmark | few-shot scoring + chain-of-query,声称全维度超越既有指标的人类对齐 |
 | [VMBench](https://arxiv.org/html/2503.10076v1) | **运动**专项:感知对齐的运动指标分解 | 我们最关心的 motion quality 维度的现成分解参考 |
-| [VideoPhy-2](https://arxiv.org/abs/2503.06800) | **物理常识**(动作中心,3940 prompts,5 级 Likert,标注物理规则) | 附 AutoEval 自动评估器;最好的模型 hard 子集 joint 也只有 47.7% —— 物理是真正拉不开分的"最差集"候选 |
+| [VideoPhy-2](https://arxiv.org/abs/2503.06800) | **物理常识**(动作中心,3940 prompts,5 级 Likert,标注物理规则) | 附 AutoEval 自动评估器;hard 子集上最好模型的 joint(语义+物理同时达标)v1 报告仅 22%(后续版本收录更强模型约 47.7%)—— 物理是真正拉得开分的"最差集"候选 |
 | [EvalCrafter](https://github.com/EvalCrafter/EvalCrafter) | 综合 T2V 质量 | 较早,维度覆盖广 |
 
 ### VLM/生成式打分模型(可自部署)
