@@ -16,6 +16,7 @@
 1. **MJ-Bench**(评"裁判"的 benchmark):闭源 VLM 综合反馈最好,但**专用小打分模型在"图文一致"和"画质"维度比通用 VLM 更准且便宜**;VLM 只在需要推理的维度(安全、偏见、物理常识)胜出。→ **能算的别让 VLM 判**。
 2. **VLM judge 有系统性弱点**:位置偏差、评分不稳定、幻觉、可被"好看但错"的样本欺骗([Fooling the LVLM Judges](https://arxiv.org/pdf/2505.15249));且**未校准的 judge 分数不可信**(Anthropic evals 指南:"在有人真正读过 transcript 之前,不把 eval 分数当真")。
 3. **不同 VLM 的感知盲区不同**:[JudgeFit](https://arxiv.org/abs/2606.22918)(2026-06)证明对每个 VLM judge 学"它自己的评价维度分类法",比全 judge 共用一套全局 rubric 平均好 ~32%——**rubric 要适配 judge,不能一套走天下**。
+4. **有几何真值的维度上,VLM judge 的可信度只有客观指标的一半**:[SpatialEdit-Bench](https://arxiv.org/abs/2604.04911)(2026)评"视角变换对不对"时,用 VGGT 反推相机位姿算出的 Viewpoint Error 与真实位姿排序的 Spearman 相关 **0.932**,而 **vision-language judge 只有 0.445**。这是"能算的别让 VLM 判"目前最硬的单一数字。
 
 结论:**客观可算维度用专用检测器/小模型;开放语义与物理维度用"rubric 化 + 校准过"的 VLM judge;人评做锚,校准前两层。** 且**评测 judge 必须与训练 reward model 分离**——用同一个模型既当训练信号又当验收标准,等于自己判自己及格,reward hacking 会被完美掩盖。
 
@@ -99,6 +100,36 @@ L2 人评锚(每周或每里程碑,~天级)
 
 人只出现在三处:定标准(rubric/阈值)、读 L1 失败理由样本(归因)、L2 校准。其余无人值守——**判一次的成本决定转数上限,这是所有设计的出发点**。
 
+## 4.5 两条来自生产的负结果:尺子会骗人,前提也会骗人
+
+> 以下两条来自一个电商图像生成团队的生产实践(已脱敏),它们是**同一类失败的两个方向**,建议成对理解——只防其中一半,另一半会照样发生。
+
+### ① 尺子会骗人:不只会虚高,也会**虚严**
+
+已被广泛讨论的是**虚高**——打分器的 bug 把成绩做上去,而且"成绩变好"这个表象让人不会去查。
+
+少被讨论的是**虚严**:**自建质量闸门的定义域错误会以"悄悄变严"的形式静默误杀,而不是以报错的形式暴露。** 实例:一个用于"量输入图"的像素测量器被复用去量生成图,全史统计 **48 次就绪 vs 39 次被否——45% 的候选被误杀丢掉,日志里只有一行 WARNING**。它不是靠工具发现的,是靠人停下来重读判定逻辑发现的。
+
+**反制**:①闸门必须自带**误杀率监控**(重生成率超阈值即视为误杀信号);②**"成绩变差"和"闸门变严"在报表上长得一模一样,必须能分开**——否则你会去优化模型,而问题在尺子。
+
+### ② 前提会骗人:写进架构文档本身是不可逆操作
+
+同一团队记录:一个错误的技术前提("某类输入下模型只能瞎猜")**活了 18 轮**。原因不是没人质疑,而是**它一旦进了文档正文就获得了默认真值地位**,后续每一轮都在它之上做工作。
+
+**反制**:**架构文档里的每条前提必须带证据徽标——`实测` / `文献` / `判断`,且 `判断` 类前提要有到期复核。** 评审时 `判断` 类段落单独看。
+
+> 这两条与本篇 §2 的纪律是同构的:留出集纪律防的是"在自己判自己及格",证据徽标防的是"在自己给自己的前提上盖楼"。**闭环转得越快,尺子与前提的错误就被放大得越厉害——杠杆两头都放大。**
+
+## 4.6 方法论:怎么让"被推翻"成为可交付物
+
+本篇的多条结论来自一次跨团队的对抗验证协作,其中受托方(研究侧)三次推翻了委托方(架构侧)的主张。可复用的三条:
+
+1. **请对方打自己的地基,并且把"部分推翻"当交付而不是失败。** 委托措辞决定结果——委托方原话是"**尽力推翻它,推翻我就改架构**"。如果委托方想要的是确认,受托方会不自觉地去找确认。这一条是前提,不是态度问题。
+2. **不背书的主张要显式标注"不采纳为前提"。** 某论文在 intro 里断言"结构控制类方法做不到像素级保真,因为它们施加的是空间约束"——若成立会让两条技术路线直接出局,但该论文**没有做 head-to-head**。正确处理是记录该主张、标注为 `判断`、并写明本设计不采纳为前提。**影响越大的主张,越不能靠一句 intro。**
+3. **更正要与原文并存,并标注"保留什么 / 降级什么 / 口径边界"。** 比直接改正文强——它让后来者看得见判断如何演进,而不是只看到一个结论。
+
+⚠️ **一条容易失效的论证:"两条独立路径推到同一结构,所以可信"。** 它成立的前提是**两边起点不共享**。一旦双方进入紧耦合(一方的证据在塑造另一方的框架,另一方的框架又在决定向对方提什么问题),后续的"收敛"就有相当概率是**回声而非独立验证**,而且**这类论证失效时是无声的**。复核问题只有一句:**这次收敛的两条路径,起点是不是有一条来自对方?** 若是,它只算一致性检查,不算独立证据。
+
 ## 5. 落地顺序建议
 
 1. **P0**:内部 200-prompt 分难度评测集 + 成对出片工具 + L2 人评一轮(先有金标,才能校准一切)——正好覆盖基线评测(Wan 2.2 / H3-Base / H3 API / Seedance API)。
@@ -111,7 +142,7 @@ L2 人评锚(每周或每里程碑,~天级)
 
 ## 来源
 
-评测方法:[VBench-2.0](https://arxiv.org/abs/2503.21755) · [Video-Bench](https://arxiv.org/abs/2504.04907) · [VMBench](https://arxiv.org/html/2503.10076v1) · [VideoPhy-2](https://arxiv.org/abs/2503.06800) · [VideoScore2](https://arxiv.org/abs/2509.22799) · [UnifiedReward](https://github.com/CodeGoat24/UnifiedReward) · [VideoRewardBench](https://arxiv.org/html/2509.00484) · [JudgeFit / per-VLM taxonomies](https://arxiv.org/abs/2606.22918) · [MJ-Bench](https://mj-bench.github.io/) · [Fooling the LVLM Judges](https://arxiv.org/pdf/2505.15249)
+评测方法:[SpatialEdit-Bench](https://arxiv.org/abs/2604.04911)(几何指标 vs VLM judge:0.932 vs 0.445) · [VBench-2.0](https://arxiv.org/abs/2503.21755) · [Video-Bench](https://arxiv.org/abs/2504.04907) · [VMBench](https://arxiv.org/html/2503.10076v1) · [VideoPhy-2](https://arxiv.org/abs/2503.06800) · [VideoScore2](https://arxiv.org/abs/2509.22799) · [UnifiedReward](https://github.com/CodeGoat24/UnifiedReward) · [VideoRewardBench](https://arxiv.org/html/2509.00484) · [JudgeFit / per-VLM taxonomies](https://arxiv.org/abs/2606.22918) · [MJ-Bench](https://mj-bench.github.io/) · [Fooling the LVLM Judges](https://arxiv.org/pdf/2505.15249)
 方法论:[Anthropic — Demystifying evals for AI agents](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents) · [Hamel Husain — LLM-as-a-Judge](https://hamel.dev/blog/posts/llm-judge/) · [Who Validates the Validators (UIST 2024)](https://arxiv.org/abs/2404.12272) · [AutoRubric-T2I](https://arxiv.org/abs/2605.17602) · [审美对齐窄化](https://arxiv.org/html/2512.11883v3) · [Awesome-Evaluation-of-Visual-Generation](https://github.com/ziqihuangg/Awesome-Evaluation-of-Visual-Generation)(跟踪入口)
 
-*另参考团队内部闭环工程方法论(loop-engineering,含跨领域负结果档案;其六条规则 R1–R6 与五个反模式是本篇 §2 关键设计决定的直接来源)。*
+*§4.5 两条负结果由一个电商图像生成团队提供并授权引用(已脱敏);§4.6 方法论源自该次跨团队对抗验证协作。另参考团队内部闭环工程方法论(loop-engineering,含跨领域负结果档案;其六条规则 R1–R6 与五个反模式是本篇 §2 关键设计决定的直接来源)。*
