@@ -1,0 +1,685 @@
+<title>短剧转绘出海:技术方案</title>
+<style>
+:root{
+  --bg:#f7f5f3; --surface:#fffefd; --surface2:#efebe7; --ink:#1f1c1b; --muted:#635954; --faint:#948a84;
+  --line:#e0d9d3; --rule:#cdc3bb;
+  --src:#a3323f;  --src-bg:#f8e9ea;      /* 原片 / 中文源 */
+  --tgt:#2c5f7a;  --tgt-bg:#e5eef3;      /* 译制 / 目标语 */
+  --opt:#8a6a1f;  --opt-bg:#f7efdc;      /* 可选 */
+  --ok:#3d6b48;   --ok-bg:#e7f0e8;
+  --warn:#9c4a20; --warn-bg:#f9ebe2;
+  --code:#3a3330;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#171514; --surface:#1f1c1a; --surface2:#272321; --ink:#ece7e3; --muted:#a89e98; --faint:#7d726c;
+    --line:#332e2b; --rule:#453e3a;
+    --src:#e08492; --src-bg:#3a1f24;
+    --tgt:#7fb6d4; --tgt-bg:#182b36;
+    --opt:#d9b463; --opt-bg:#33290f;
+    --ok:#84b892; --ok-bg:#1c2c20;
+    --warn:#e09366; --warn-bg:#33200f;
+    --code:#cfc7c2;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#171514; --surface:#1f1c1a; --surface2:#272321; --ink:#ece7e3; --muted:#a89e98; --faint:#7d726c;
+  --line:#332e2b; --rule:#453e3a;
+  --src:#e08492; --src-bg:#3a1f24;
+  --tgt:#7fb6d4; --tgt-bg:#182b36;
+  --opt:#d9b463; --opt-bg:#33290f;
+  --ok:#84b892; --ok-bg:#1c2c20;
+  --warn:#e09366; --warn-bg:#33200f;
+  --code:#cfc7c2;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  font-size:15.5px;line-height:1.78;-webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding:44px 24px 96px}
+header.doc{border-bottom:3px double var(--rule);padding-bottom:22px;margin-bottom:10px}
+.kicker{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:11.5px;letter-spacing:.2em;color:var(--src);text-transform:uppercase;margin:0 0 12px}
+h1{font-size:31px;line-height:1.28;margin:0 0 12px;font-weight:800;letter-spacing:.02em;text-wrap:balance}
+.sub{color:var(--muted);margin:0;max-width:62ch;font-size:15px}
+.meta-line{display:flex;gap:20px;flex-wrap:wrap;margin-top:16px;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--faint)}
+nav.toc{display:flex;flex-wrap:wrap;gap:7px;padding:16px 0 8px;border-bottom:1px solid var(--line);margin-bottom:38px}
+nav.toc a{font-size:12.5px;color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:2px;padding:3px 10px;background:var(--surface)}
+nav.toc a:hover,nav.toc a:focus-visible{color:var(--src);border-color:var(--src)}
+h2{font-size:22px;margin:58px 0 6px;font-weight:800;letter-spacing:.02em}
+h2 .no{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--src);margin-right:11px;font-weight:700}
+h3{font-size:17px;margin:34px 0 8px;font-weight:700}
+h4{font-size:14.5px;margin:22px 0 6px;font-weight:700}
+.h2sub{color:var(--muted);font-size:13.5px;margin:0 0 20px;max-width:70ch}
+p{margin:0 0 14px;max-width:76ch}
+a{color:var(--tgt);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+:root:not([data-theme="dark"]) a{color:#1f4d66}
+strong{font-weight:700}
+ul,ol{margin:0 0 14px;padding-left:24px;max-width:76ch}
+li{margin-bottom:6px}
+.tag{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.07em;padding:1px 7px;border-radius:2px;vertical-align:2px;white-space:nowrap}
+.tag.src{color:var(--src);background:var(--src-bg)}
+.tag.tgt{color:var(--tgt);background:var(--tgt-bg)}
+.tag.opt{color:var(--opt);background:var(--opt-bg)}
+.tag.open{color:var(--ok);background:var(--ok-bg)}
+.tag.closed{color:var(--warn);background:var(--warn-bg)}
+.diagram{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:8px 4px;margin:22px 0 10px;overflow-x:auto}
+.diagram svg{display:block;min-width:760px}
+.figcap{font-size:12.5px;color:var(--faint);margin:0 0 26px;max-width:76ch}
+.tbl{overflow-x:auto;margin:16px 0 22px;border:1px solid var(--line);border-radius:3px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;line-height:1.6}
+th{font-size:11.5px;letter-spacing:.06em;text-align:left;color:var(--muted);background:var(--surface2);
+  padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap;font-weight:700}
+td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td.k,th.k{white-space:nowrap;font-weight:700}
+.num{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-variant-numeric:tabular-nums;font-size:12.5px}
+.callout{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--src);border-radius:3px;padding:15px 18px;margin:18px 0;font-size:14px}
+.callout.warn{border-left-color:var(--warn)}
+.callout.tgt{border-left-color:var(--tgt)}
+.callout p:last-child{margin-bottom:0}
+.callout .lbl{display:block;font-size:11.5px;letter-spacing:.08em;font-weight:700;color:var(--src);margin-bottom:6px}
+.callout.warn .lbl{color:var(--warn)}
+.callout.tgt .lbl{color:var(--tgt)}
+.rule-card{display:grid;grid-template-columns:auto 1fr;gap:0 16px;background:var(--surface);border:1px solid var(--line);border-radius:3px;padding:14px 18px;margin:12px 0}
+.rule-card .n{font-family:ui-monospace,Menlo,monospace;font-size:26px;font-weight:700;color:var(--src);line-height:1;padding-top:2px}
+.rule-card h4{margin:0 0 4px}
+.rule-card p{margin:0;font-size:13.5px;color:var(--muted);max-width:none}
+.spec{display:grid;grid-template-columns:110px 1fr;gap:3px 16px;margin:12px 0 18px;font-size:13.5px}
+.spec dt{color:var(--faint);font-size:11.5px;letter-spacing:.05em;padding-top:3px}
+.spec dd{margin:0}
+@media (max-width:560px){.spec{grid-template-columns:1fr}.spec dt{padding-top:8px}}
+.pre{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;line-height:1.85;background:var(--surface);border:1px solid var(--line);border-radius:3px;padding:14px 18px;margin:14px 0 20px;overflow-x:auto;white-space:pre;color:var(--code)}
+.footnote{font-size:12.5px;color:var(--faint);margin-top:8px}
+.src-note{font-size:11.5px;color:var(--faint)}
+hr.sep{border:none;border-top:1px solid var(--line);margin:50px 0}
+:focus-visible{outline:2px solid var(--src);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+<header class="doc">
+  <p class="kicker">Video Research · 转绘出海技术方案</p>
+  <h1>中文短剧转制海外版:三条轨道、五条顺序约束、四种路线</h1>
+  <p class="sub">把"换人、换语言、换文字"拆成可施工的流水线:每一环用什么模型、公开数字是多少、哪些顺序不能颠倒、在哪里设质检闸门、成本落在什么量级。</p>
+  <div class="meta-line"><span>2026-08-10</span><span>定向深调研 · 一手论文 + 行业数据</span><span>🟢一手 🟡权威三方 🟠行业/商业宣称</span></div>
+</header>
+
+<nav class="toc" aria-label="目录">
+  <a href="#tldr">0 结论</a>
+  <a href="#tracks">1 三条轨道与顺序约束</a>
+  <a href="#route">2 四种路线选型</a>
+  <a href="#person">3 人物切换</a>
+  <a href="#lang">4 语言与口型</a>
+  <a href="#text">5 文字处理</a>
+  <a href="#consistency">6 跨镜头一致性</a>
+  <a href="#qc">7 质检闸门</a>
+  <a href="#cost">8 成本与产能</a>
+  <a href="#risk">9 风险登记</a>
+</nav>
+
+<h2 id="tldr"><span class="no">0</span>结论先行</h2>
+
+<div class="callout">
+<span class="lbl">四句话</span>
+<p><strong>① 顺序比选型更容易出错。</strong>去字幕、换人、配音、口型、加新文字之间有五条硬顺序约束,搞错任何一条都会让上游工作作废——而这类错误在单条 demo 上不暴露,只在批量生产时爆发。</p>
+<p><strong>② 语言这条轨道的真正难题不是翻译或口型,是<u>时长错配</u>。</strong>译文时长≠原文时长,而它会向下传导到口型、背景声、剪辑点。级联流水线在这里有结构性缺陷:公开数据里级联方案的时长误差 <span class="num">1.96s+</span>,联合音视频扩散做到 <span class="num">0.046s</span>。</p>
+<p><strong>③ 人物切换有三个层级,选错层级比选错模型贵得多。</strong>只换脸(保留身形/服装/场景)在"中文剧改海外剧"这个目标下多半不够——观众感知到的"中国感"大量来自身形、服装、道具、场景与镜头语言,而换脸一样都改不了。</p>
+<p><strong>④ 行业已经在分层。</strong>2026 上半年海外市场中"本土剧"占比已从 27% 升到 <span class="num">46%</span> 🟠——高价值内容在走本地重拍,AI 转绘的真实位置是<strong>长尾内容的低成本覆盖</strong>与<strong>本土剧的产能补充</strong>,不是替代重拍。定位错了,质量标准也会定错。</p>
+</div>
+
+<hr class="sep">
+
+<h2 id="tracks"><span class="no">1</span>三条轨道与五条顺序约束</h2>
+<p class="h2sub">整个改制过程是三条并行轨道(画面 / 声音 / 文字)在若干点上互锁。把它画成时间线比画成流程图更贴近实际——因为约束大多是"谁必须在谁之前",而不是"谁调用谁"。</p>
+
+<div class="diagram">
+<svg viewBox="0 0 900 320" role="img" aria-label="三条轨道流水线图:画面轨、声音轨、文字轨,以及五条顺序约束">
+  <defs>
+    <marker id="ah" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g font-family="ui-monospace,Menlo,monospace" font-size="11">
+    <!-- track labels -->
+    <text x="8" y="76" fill="var(--muted)" font-size="11.5">画面轨</text>
+    <text x="8" y="166" fill="var(--muted)" font-size="11.5">声音轨</text>
+    <text x="8" y="256" fill="var(--muted)" font-size="11.5">文字轨</text>
+    <!-- track baselines -->
+    <line x1="70" y1="88" x2="880" y2="88" stroke="var(--line)" stroke-width="1"/>
+    <line x1="70" y1="178" x2="880" y2="178" stroke="var(--line)" stroke-width="1"/>
+    <line x1="70" y1="268" x2="880" y2="268" stroke="var(--line)" stroke-width="1"/>
+
+    <!-- stage header -->
+    <text x="76" y="26" fill="var(--faint)" font-size="10.5">① 预处理</text>
+    <text x="246" y="26" fill="var(--faint)" font-size="10.5">② 画面改制</text>
+    <text x="466" y="26" fill="var(--faint)" font-size="10.5">③ 对口</text>
+    <text x="646" y="26" fill="var(--faint)" font-size="10.5">④ 合成</text>
+    <line x1="236" y1="14" x2="236" y2="290" stroke="var(--line)" stroke-dasharray="3 4"/>
+    <line x1="456" y1="14" x2="456" y2="290" stroke="var(--line)" stroke-dasharray="3 4"/>
+    <line x1="636" y1="14" x2="636" y2="290" stroke="var(--line)" stroke-dasharray="3 4"/>
+
+    <!-- VIDEO track blocks -->
+    <g>
+      <rect x="76" y="58" width="148" height="30" rx="3" fill="var(--src-bg)" stroke="var(--src)"/>
+      <text x="150" y="77" text-anchor="middle" fill="var(--src)">镜头切分 / 人脸轨迹</text>
+
+      <rect x="248" y="58" width="196" height="30" rx="3" fill="var(--src-bg)" stroke="var(--src)"/>
+      <text x="346" y="77" text-anchor="middle" fill="var(--src)">人物切换(换脸/换人/转绘)</text>
+
+      <rect x="468" y="58" width="156" height="30" rx="3" fill="var(--tgt-bg)" stroke="var(--tgt)"/>
+      <text x="546" y="77" text-anchor="middle" fill="var(--tgt)">口型重绘</text>
+
+      <rect x="648" y="58" width="150" height="30" rx="3" fill="var(--surface2)" stroke="var(--rule)"/>
+      <text x="723" y="77" text-anchor="middle" fill="var(--muted)">调色 / 超分 / 出片</text>
+    </g>
+
+    <!-- AUDIO track blocks -->
+    <g>
+      <rect x="76" y="148" width="148" height="30" rx="3" fill="var(--src-bg)" stroke="var(--src)"/>
+      <text x="150" y="167" text-anchor="middle" fill="var(--src)">ASR + 人声/环境声分离</text>
+
+      <rect x="248" y="148" width="196" height="30" rx="3" fill="var(--tgt-bg)" stroke="var(--tgt)"/>
+      <text x="346" y="167" text-anchor="middle" fill="var(--tgt)">翻译 + 时长适配 + 声纹克隆 TTS</text>
+
+      <rect x="468" y="148" width="156" height="30" rx="3" fill="var(--tgt-bg)" stroke="var(--tgt)"/>
+      <text x="546" y="167" text-anchor="middle" fill="var(--tgt)">混音(对白+环境声)</text>
+    </g>
+
+    <!-- TEXT track blocks -->
+    <g>
+      <rect x="76" y="238" width="148" height="30" rx="3" fill="var(--src-bg)" stroke="var(--src)"/>
+      <text x="150" y="257" text-anchor="middle" fill="var(--src)">OCR 定位 + 去硬字幕</text>
+
+      <rect x="648" y="238" width="180" height="30" rx="3" fill="var(--opt-bg)" stroke="var(--opt)"/>
+      <text x="738" y="257" text-anchor="middle" fill="var(--opt)">新字幕 / 屏幕文字(可选)</text>
+    </g>
+
+    <!-- constraint arrows -->
+    <g stroke-width="1.4" fill="none">
+      <!-- C1 text removal before video restyle -->
+      <path d="M150,238 L150,215 L150,95" stroke="var(--warn)" marker-end="url(#ah)" color="var(--warn)"/>
+      <text x="158" y="212" fill="var(--warn)" font-size="10">C1 去字幕先于改画面</text>
+      <!-- C2 duration before lipsync -->
+      <path d="M420,148 L420,120 L470,120 L470,60" stroke="var(--warn)" marker-end="url(#ah)" color="var(--warn)" transform="translate(0,0)"/>
+      <text x="360" y="114" fill="var(--warn)" font-size="10">C2 音频定稿先于口型</text>
+      <!-- C3 face swap before lipsync (inline arrow) -->
+      <path d="M444,73 L466,73" stroke="var(--warn)" marker-end="url(#ah)" color="var(--warn)"/>
+      <text x="392" y="46" fill="var(--warn)" font-size="10">C3 换人先于口型</text>
+      <!-- C4 new text last -->
+      <path d="M798,73 L820,73 L820,232" stroke="var(--opt)" marker-end="url(#ah)" color="var(--opt)"/>
+      <text x="672" y="228" fill="var(--opt)" font-size="10">C4 新文字最后加</text>
+      <!-- C5 shot map feeds all -->
+      <path d="M224,73 L244,73" stroke="var(--rule)" marker-end="url(#ah)" color="var(--rule)"/>
+      <path d="M224,163 L244,163" stroke="var(--rule)" marker-end="url(#ah)" color="var(--rule)"/>
+    </g>
+    <text x="76" y="306" fill="var(--faint)" font-size="10">C5 镜头表贯穿三轨:每一环都按镜头为单位处理并对齐,否则跨镜头一致性无从校验</text>
+  </g>
+</svg>
+</div>
+<p class="figcap">三条轨道并行,五条顺序约束互锁。<span class="tag src">原片</span> 处理源语素材 · <span class="tag tgt">译制</span> 产出目标语内容 · <span class="tag opt">可选</span> 按投放平台决定。</p>
+
+<div class="rule-card"><div class="n">C1</div><div>
+<h4>去硬字幕必须在画面改制<u>之前</u></h4>
+<p>顺序反了会出两种事故:转绘/换人模型会"认真地"重绘那些中文字,把可 OCR 定位的规则文本变成不可定位的乱码纹理;而 inpainting 在被重渲染过的背景上效果明显更差。<strong>去字幕是唯一一个必须在最早期做完的画面操作。</strong></p>
+</div></div>
+
+<div class="rule-card"><div class="n">C2</div><div>
+<h4>目标语音频必须<u>定稿</u>后才能做口型</h4>
+<p>口型模型是对着音频波形生成嘴部动作的。音频只要还会改(改词、重录、调语速),口型就得重做。**这条约束把"时长适配"顶到了流水线的关键路径上**——见 <a href="#lang">§4</a>。</p>
+</div></div>
+
+<div class="rule-card"><div class="n">C3</div><div>
+<h4>人物切换必须在口型<u>之前</u></h4>
+<p>口型模型编辑的是嘴部区域像素。先做口型再换脸,换脸会把口型结果覆盖掉;先换脸再做口型,口型是在新面孔上生成的——这才是对的。<strong>唯一例外:全片转绘路线里,转绘本身可能已经改变了嘴部可编辑区域的稳定性,需要单独验证。</strong></p>
+</div></div>
+
+<div class="rule-card"><div class="n">C4</div><div>
+<h4>新屏幕文字(标题卡、短信、招牌)必须<u>最后</u>加</h4>
+<p>任何在其之后的画面处理(超分、调色、重编码)都会破坏文字锐度;而如果它在换人之前加,会被当作画面内容一起改掉。</p>
+</div></div>
+
+<div class="rule-card"><div class="n">C5</div><div>
+<h4>三条轨道共用一份<u>镜头表</u></h4>
+<p>短剧是高剪辑密度内容——1 分钟一集里常有十几到几十个镜头。所有处理必须以镜头为单位切分并对齐到同一份镜头表,否则"这个角色在第 7 个镜头和第 12 个镜头长得不一样"这类问题既无法定位也无法回归。<strong>镜头表是整条流水线的主键。</strong></p>
+</div></div>
+
+<hr class="sep">
+
+<h2 id="route"><span class="no">2</span>四种路线:先选层级,再选模型</h2>
+<p class="h2sub">"人物切换"这四个字覆盖了成本相差两个数量级的四种做法。选错层级带来的浪费,远大于在同一层级里选错模型。</p>
+
+<div class="tbl"><table>
+<tr><th>路线</th><th>改什么 / 不改什么</th><th>技术</th><th>相对成本</th><th>什么时候选它</th></tr>
+<tr>
+  <td class="k">A · 只换脸</td>
+  <td><strong>改</strong>:面部<br><strong>不改</strong>:身形、服装、发型、场景、道具、镜头语言</td>
+  <td>InSwapper / SimSwap 类;LivingSwap、CanonSwap 等 2026 新工作</td>
+  <td class="num">最低</td>
+  <td>目标市场对"演员长相"敏感但对场景不敏感;或原片场景本身无地域标识(室内、近景为主)</td>
+</tr>
+<tr>
+  <td class="k">B · 换整人</td>
+  <td><strong>改</strong>:面部+身形+肤色+服装<br><strong>不改</strong>:动作、场景、道具、镜头</td>
+  <td>见 §3.2 先验撤退阶梯:G4 端到端(MoCha)已撤掉骨架与逐帧 mask</td>
+  <td class="num">中</td>
+  <td>需要改变族裔观感、且场景可复用(现代都市戏、室内戏)</td>
+</tr>
+<tr>
+  <td class="k">C · 全片转绘</td>
+  <td><strong>改</strong>:几乎全部像素<br><strong>保</strong>:动作轨迹、运镜、时序</td>
+  <td>V2V 重渲染:Runway Aleph <span class="tag closed">闭源</span> / Wan VACE <span class="tag open">开源权重</span>(支持至多 3 张参考图)</td>
+  <td class="num">高</td>
+  <td>需要连场景与服装一起换;或做风格转换(真人↔动漫)</td>
+</tr>
+<tr>
+  <td class="k">D · 本地重拍</td>
+  <td>全部重来,只复用剧本与分镜</td>
+  <td>真人拍摄 + AI 提效(选角、分镜、后期)</td>
+  <td class="num">最高</td>
+  <td>高价值 IP;或目标市场对文化质感要求高(欧美、中东)</td>
+</tr>
+</table></div>
+
+<div class="callout warn">
+<span class="lbl">⚠ 最容易犯的判断错误</span>
+<p><strong>"换个脸就是海外剧了"——多半不成立。</strong>观众对"这是中国剧"的感知,大量来自换脸改不掉的东西:身形与体态、服装剪裁、发型、室内陈设、街景招牌、车牌、手机 UI、饮食道具,以及镜头语言与表演节奏本身。</p>
+<p>行业数据侧面印证了这一点:2026 上半年海外市场中<strong>本土剧占比已从 2025 年的 27% 升至 46%</strong>,而行业观察是"<strong>大量出海团队目前只做字幕翻译加简单换脸改编,没有针对欧美、中东、拉美做深度改写</strong>"🟠。**换脸方案正在被本土剧挤压的,恰恰是它改不掉的那部分。**</p>
+<p>可操作的判据:<strong>拿原片随机抽 20 帧,逐帧问"这一帧里有几个东西暴露了地域"。</strong>若平均 >2 个且多数不在人脸上,路线 A 不够。</p>
+</div>
+
+<hr class="sep">
+
+<h2 id="person"><span class="no">3</span>人物切换:技术与数字</h2>
+
+<h3>3.1 换脸这一支已经从 GAN 转向视频扩散</h3>
+<p>2026 年 3 月这一支的研究集中在三个方向:<strong>3D 一致的头部替换</strong>、<strong>任意参考身份的视频生成</strong>、<strong>面向影视级的扩散换脸</strong>——真正的分水岭是<strong>时序连贯、3D 结构、多参考可控性</strong> 🟡。</p>
+
+<h4>LivingSwap:为什么影视级换脸和demo级换脸是两个问题 🟢</h4>
+<dl class="spec">
+  <dt>它解决什么</dt><dd>GAN 类逐帧处理 → 长序列<strong>闪烁与抖动</strong>;视频扩散类依赖关键点/3D 脸等中间表示 → <strong>丢失信息,表情、光照与细微差别对不齐</strong>;传统 inpainting 丢弃原像素 → <strong>细节保真明显下降</strong></dd>
+  <dt>关键设计</dt><dd><strong>① 关键帧身份注入</strong>(在姿态/表情大变处做高质量单帧换脸,以此引导整段,人工修图量降约 <span class="num">40×</span>);<strong>② 视频参考补全</strong>——把完整源视频段当视觉参考喂进去而不是遮罩掉,从而保住光照、细微表情与背景;<strong>③ 时序缝合</strong>——81 帧为一块重叠处理,用前块输出接续</dd>
+</dl>
+
+<div class="tbl"><table>
+<tr><th>CineFaceBench(影视场景)</th><th>LivingSwap</th><th>InSwapper</th><th>SimSwap</th></tr>
+<tr><td class="k">身份相似度 ↑</td><td class="num">0.532</td><td class="num">0.567</td><td class="num">0.506</td></tr>
+<tr><td class="k">光照误差 ↓</td><td class="num">0.192</td><td class="num">0.189</td><td class="num">0.214</td></tr>
+<tr><td class="k">姿态误差 ↓</td><td class="num"><strong>3.108</strong></td><td class="num">3.421</td><td class="num">4.623</td></tr>
+<tr><td class="k">FVD(时序质量)↓</td><td class="num"><strong>54.32</strong></td><td class="num">66.62</td><td class="num">74.63</td></tr>
+</table></div>
+
+<p class="footnote"><strong>读法很重要:身份相似度上 InSwapper 反而更高(0.567 vs 0.532),LivingSwap 赢的是姿态误差与 FVD。</strong>这说明影视场景下的瓶颈<u>不是"像不像那个人"</u>,而是<u>"这一段看起来是不是同一次拍摄"</u>——光照、姿态、时序质量。把身份相似度当唯一 KPI 会选错模型。</p>
+
+<div class="callout">
+<span class="lbl">成本锚点</span>
+<p>LivingSwap 的推理速度是 <strong>H200 上每 3 秒视频约 3 分钟</strong>(81 帧),即约 <strong>60× 实时</strong>;输入分辨率固定 <span class="num">640×640</span>。按此推算:<strong>1 分钟成片 ≈ 1 GPU-小时,10 集(每集 1 分钟)≈ 10 GPU-小时</strong>——仅换脸这一环。这个量级决定了它只能用于成片而不是试错迭代,<strong>迭代必须在低分辨率代理片段上做。</strong></p>
+<p>已知局限:依赖关键帧质量(极端角度、遮挡、闭眼会退化);固定 640×640 需要额外超分回原分辨率;长序列的分块缝合仍需谨慎管理。</p>
+</div>
+
+<h3>3.2 换整人:先验撤退阶梯已经走完关键一步</h3>
+<p>全身替换要同时改面部、体态、肤色、服装与比例,同时保住原动作、姿态、表情与场景。新增失败面是<strong>遮挡关系</strong>、<strong>体型不匹配</strong>与<strong>接缝</strong>。</p>
+<p><strong>但用"这条路有没有合适的 prior"这个角度看,它的演进史比逐个比模型清楚得多。</strong>把人工设计的中间表示一级一级撤掉,是这条线过去两年的主轴:</p>
+
+<div class="tbl"><table>
+<tr><th>代</th><th>做法</th><th>人工先验(要显式提供的)</th><th>代表</th><th>它为什么会崩</th></tr>
+<tr>
+  <td class="k">G1 · 级联</td>
+  <td>分割抠像 → 骨架驱动参考人 → 贴回 → 边界 inpaint → 调色</td>
+  <td>逐帧 mask、骨架、深度、法线、UV——<strong>全部</strong></td>
+  <td>多数商业 body-swap 产品 🟠</td>
+  <td>每一环误差向下传导;边界是伪影高发区</td>
+</tr>
+<tr>
+  <td class="k">G2 · 学映射</td>
+  <td>ReferenceNet(管身份)+ Pose Guider(管动作)+ 时序注意力</td>
+  <td>骨架仍显式给</td>
+  <td>AnimateAnyone、MagicAnimate、MimicMotion(引入置信度感知的姿态引导以抗检测器噪声)</td>
+  <td><strong>姿态检测器的噪声直接传导</strong>;姿态过约束导致动作僵</td>
+</tr>
+<tr>
+  <td class="k">G2.5 · 加厚人工 3D</td>
+  <td>用 SMPL 派生的 3D 条件(深度/法线/语义)替代 2D 骨架</td>
+  <td>更厚的人工 3D 先验</td>
+  <td>Champ</td>
+  <td>3D 估计本身的误差成为新的上游</td>
+</tr>
+<tr>
+  <td class="k">G3 · 视频重绘</td>
+  <td>当作带参考保真与动作控制的<strong>视频 inpainting</strong>;时序引导用前帧影响后帧抑制闪烁</td>
+  <td><strong>逐帧 mask</strong> + 结构引导</td>
+  <td>SwapAnyone(定义了身份/动作/环境三重一致性,附 HumanAction-32K 数据集)、DreamSwapV</td>
+  <td>逐帧 mask 是硬成本;遮挡与人物-物体交互仍是弱项</td>
+</tr>
+<tr style="background:var(--src-bg)">
+  <td class="k">G4 · 端到端</td>
+  <td><strong>只要单帧任意 mask</strong>,不要骨架、不要深度、不要逐帧分割;condition-aware RoPE + <strong>RL 后训练</strong></td>
+  <td><strong>结构先验基本撤光</strong></td>
+  <td><strong>MoCha</strong>(2026-01)</td>
+  <td>长视频一致性、极端姿态;声明将开源代码,需确认实际释出</td>
+</tr>
+</table></div>
+
+<div class="callout">
+<span class="lbl">MoCha 的原话最能说明问题</span>
+<p>它对前代的诊断是:此前方法"<strong>依赖逐帧分割掩码与显式结构引导(如骨架、深度)</strong>",而"这种依赖<strong>严重限制了它们在涉及遮挡、人物-物体交互、异常姿态或困难光照的复杂场景中的泛化能力</strong>,往往导致视觉伪影与时序不一致" 🟢。</p>
+<p><strong>括号里那四项,恰好是短剧的常态</strong>——拉扯、拥抱、递东西、耳光、夜戏、逆光。也就是说 <strong>G1–G3 路线的失效场景,和短剧的高频场景高度重合</strong>。这是"换人该走哪条路"最直接的判据,不需要跑对比实验。</p>
+<p>它绕开"缺乏配对视频数据"这个根本困难的办法也值得抄:<strong>三套自建数据集——UE5 渲染的高保真配对数据、用肖像动画技术合成的表情驱动数据、以及从已有 video-mask 对增广的数据。</strong>UE5 那条尤其可控:遮挡、光照、姿态的难度分布可以精确设计。</p>
+</div>
+
+<h4>⚠ 但这里有一个和运镜识别相反的转折:生成任务的先验撤退不是单调的</h4>
+<p>判别任务(如运镜分类)上,撤掉人工特征、换更厚的预训练先验,精度是单调上升的。<strong>生成任务不是——身份先验"裸注入"会产生一类新的失败。</strong></p>
+
+<div class="tbl"><table>
+<tr><th>发现</th><th>出处</th><th>含义</th></tr>
+<tr>
+  <td>"<strong>单张参考图不可避免地把『这个人是谁』和『这个人在这一帧碰巧长什么样』纠缠在一起</strong>"——过度信任参考就复制无关细节,信任不足就身份漂移</td>
+  <td>Argus 🟢</td>
+  <td>参考图同时携带身份与姿态/表情/配饰/光照,是一个<strong>纠缠的条件</strong></td>
+</tr>
+<tr>
+  <td>"<strong>朴素地注入参考图会让模型把参考视角当成静态模板</strong>,导致<strong>姿态锁死(pose locking)、视角塌缩(view collapse)、以及过度保留参考特有的外观线索</strong>"</td>
+  <td>Vera 🟢</td>
+  <td>先验太"硬"会反过来压制动作——而<strong>动作正是转绘要保住的东西</strong></td>
+</tr>
+</table></div>
+
+<p><strong>所以 2026 年的解法不是加减先验强度,是改注入通路:</strong></p>
+<ul>
+<li><strong>Argus:多视角身份马赛克。</strong>3×3 九宫格,每格是一张静态图或一段微片段,由 MLLM"身份导演"挑选<u>跨视角、表情、尺度、光照</u>的九个观察(避免选成一堆近重复的正脸)。关键在于它<strong>不走外部 adapter,而是放在同一条扩散路径上</strong>,用 Wan 的原生 token 接口,给身份格分配<strong>负时间位置(−n 到 −1)</strong>,当作视频 token 可读、但不会被污染的<strong>只读记忆</strong>——论文称这消除了"干净参考 token 拼接造成的 support mismatch"。</li>
+<li><strong>Vera:分层控制注入深度。</strong>浅层用 Reference-Anchor Preserving Mask <u>禁止</u>参考 token 去看视频 key(保持参考表征干净),再在<u>中层</u> DiT(视频 token 最积极吸收参考线索的位置)选择性强化身份读出;同时训练时面部区域权重 2.0、背景 1.0。</li>
+</ul>
+
+<div class="tbl"><table>
+<tr><th>方法</th><th>基准</th><th>数字</th></tr>
+<tr><td class="k">Argus</td><td>OpenS2V-Eval 人物域</td><td>总分 <span class="num">64.38</span>(+4.18)· FaceSim <span class="num">71.86</span>(+4.55)· NexusScore <span class="num">51.62</span>(+4.41)</td></tr>
+<tr><td class="k">Argus</td><td>HardID-Celeb 压力测试</td><td><strong>YawScore +12.60 · OccScore +15.10</strong></td></tr>
+<tr><td class="k">Vera vs VACE-14B</td><td>身份保真</td><td>FaceSim-Arc <span class="num">0.571</span> vs <span class="num">0.531</span>(+7.5%)· NaturalScore <span class="num">3.90</span> vs <span class="num">3.65</span></td></tr>
+</table></div>
+
+<p class="footnote"><strong>注意 Argus 那两个压力测试数字的位置:收益主要来自侧脸(Yaw)与遮挡(Occ),分别 +12.60 和 +15.10,远大于总分的 +4.18。</strong>而侧脸与遮挡正是短剧的高频镜头(过肩、侧身对话、被道具挡)。<u>在常规基准上看起来"只好一点"的方法,在短剧的实际镜头分布上差距会放大。</u>这也说明:<strong>选型不能只看总分,要看压力子集。</strong></p>
+
+<div class="callout warn">
+<span class="lbl">⚠ 短剧的决定性约束:多人同框</span>
+<p>短剧几乎全是双人对手戏,而这正是现有方法的<strong>公认盲区</strong>:多人场景的核心问题是"<strong>身份-角色错绑(identity-role misbinding)、主体混淆、属性互换</strong>",而"<strong>人物中心的方法通常假设单一身份,缺少显式的身份-角色绑定机制</strong>" 🟢。多人 S2V 要的不只是身份保持,是 <strong>身份-角色-轨迹三者绑定</strong>。</p>
+<p><strong>这是比画质严重得多的事故类型</strong>:A 和 B 在某个镜头长相互换了,观众立刻出戏,而自动指标(平均身份相似度)完全看不出来——因为两个人都"像某个参考",只是绑错了。<strong>必须在评测里单列"身份-角色绑定正确率"这一维,并按最差镜头报数。</strong></p>
+<p>商业侧已有多轨方案 🟠:Pruna P-Video Replace 声称可换入至多 4 个身份并保留背景/动作/音频;Viggle V4 Multi-Track 支持多角色跟踪替换。质量未经独立验证。</p>
+</div>
+
+<h4>3.2.1 实际能下载能跑的:开源清单</h4>
+<p>好消息是这条路的<strong>权重基本都放出来了,而且不少是 Apache 2.0</strong>。按前面的阶梯归位:</p>
+
+<div class="tbl"><table>
+<tr><th>项目</th><th>阶梯位</th><th>底座 / 输入</th><th>释出状态</th><th>定位</th></tr>
+<tr style="background:var(--src-bg)">
+  <td class="k"><strong>Wan2.2-Animate-14B</strong></td>
+  <td>G2–G3</td>
+  <td>Wan-I2V;<strong>骨架(VitPose)+ 参考人像</strong></td>
+  <td><span class="tag open">权重已放</span> <strong>Apache 2.0</strong>;ComfyUI 原生工作流;Replicate API</td>
+  <td><strong>生产首选</strong>。一个模型两模式:<u>动画</u>(照人物图跟着演)与<u>替换</u>(把视频里的人换掉、保留环境)</td>
+</tr>
+<tr style="background:var(--src-bg)">
+  <td class="k"><strong>MoCha</strong></td>
+  <td><strong>G4</strong></td>
+  <td>Wan2.1-T2V-14B;<strong>只要首帧 mask + 参考图</strong>,不要骨架/深度</td>
+  <td><span class="tag open">代码+checkpoint 已放</span>(CVPR 2026);社区已有 ComfyUI 工作流</td>
+  <td><strong>难场景专用</strong>:遮挡、多人交互、异常姿态、强逆光/闪烁灯</td>
+</tr>
+<tr>
+  <td class="k">SwapAnyone</td><td>G3</td>
+  <td>视频 inpainting + ControlNet + 时序引导</td>
+  <td><span class="tag open">代码+权重+数据集</span>(HumanAction-32K)</td>
+  <td>定义了身份/动作/环境三重一致性;可作对照基线</td>
+</tr>
+<tr>
+  <td class="k">VACE(Wan2.1)</td><td>G3</td>
+  <td>all-in-one 视频编辑;Reference-Anything</td>
+  <td><span class="tag open">开源</span>;ComfyUI 工作流成熟;社区有 FusioniX 等 10 步加速版</td>
+  <td>通用编辑器,主体/结构/姿态/运动多种保留模式</td>
+</tr>
+<tr>
+  <td class="k">HunyuanCustom</td><td>G3</td>
+  <td>主体一致的定制视频生成</td>
+  <td><span class="tag open">权重已放</span>(2025-05)</td>
+  <td>ID 一致性方向的另一家底座</td>
+</tr>
+<tr>
+  <td class="k">UniAnimate-DiT</td><td>G2</td>
+  <td>Wan2.1;姿态驱动</td>
+  <td><span class="tag open">训练+推理代码</span></td>
+  <td>要<u>动作迁移</u>而非替换时用</td>
+</tr>
+<tr>
+  <td class="k">ReplaceAnyone</td><td>G3</td>
+  <td>图像条件的视频 inpainting + 姿态引导;可用于 Wan2.1</td>
+  <td><span class="tag open">代码</span></td>
+  <td>多种 mask 形态防形状泄漏;混合 inpainting 编码器保背景</td>
+</tr>
+<tr>
+  <td class="k">MimicMotion / Champ / StableAnimator / Moore-AnimateAnyone</td>
+  <td>G2–G2.5</td><td>姿态/SMPL 驱动</td><td><span class="tag open">均开源</span></td>
+  <td>上一代,现多作基线;Wan-Animate 在自重建任务上全面超过</td>
+</tr>
+</table></div>
+
+<h4>Wan-Animate:两个值得单独讲的设计</h4>
+<div class="tbl"><table>
+<tr><th></th><th>做法</th><th>为什么对短剧重要</th></tr>
+<tr>
+  <td class="k">面部不走关键点</td>
+  <td>用<strong>原始面部图像</strong>当驱动信号(关键点会丢细粒度细节);压到 1D latent 降低身份特异信息,加缩放/色抖/噪声增强防身份过拟合;经 <strong>Face Blocks</strong>(40 层里每 5 层一个)cross-attention 注入</td>
+  <td>短剧是表演驱动的,表情细节就是内容本身</td>
+</tr>
+<tr>
+  <td class="k"><strong>Relighting LoRA</strong></td>
+  <td>专治"严格保外观 → 与新环境光照/色彩对不上"。造数据的办法很巧:把角色从原视频分割出来,用 <strong>IC-Light 重合成到随机背景</strong>制造光照/色彩偏移,再用合成图当参考去学自适应调光</td>
+  <td><strong>换进去的人"贴上去"的感觉,主要来源就是光照不同源</strong>——这是路线 A/B 最常见的穿帮</td>
+</tr>
+</table></div>
+
+<div class="tbl"><table>
+<tr><th>自重建基准</th><th>SSIM ↑</th><th>LPIPS ↓</th><th>FVD ↓</th></tr>
+<tr><td class="k">Wan-Animate(portrait)</td><td class="num"><strong>0.834</strong></td><td class="num"><strong>0.205</strong></td><td class="num"><strong>94.65</strong></td></tr>
+<tr><td class="k">Animate Anyone 2(portrait)</td><td class="num">0.825</td><td class="num">0.212</td><td class="num">98.03</td></tr>
+<tr><td class="k">Wan-Animate(general)</td><td class="num">0.813</td><td class="num">0.227</td><td class="num">118.65</td></tr>
+<tr><td class="k">Moore-AA</td><td class="num">0.761</td><td class="num">0.288</td><td class="num">170.07</td></tr>
+</table></div>
+<p class="footnote">另有 20 人参与的跨身份人评:对比闭源 SOTA(Runway <strong>Act-Two</strong>、字节 <strong>DreamActor-M1</strong>),Wan-Animate 在整体质量、身份一致、动作准确、表情准确上均显著更受偏好 🟢(自报)。</p>
+
+<div class="callout warn">
+<span class="lbl">⚠ 三个会直接踩到的坑</span>
+<p><strong>① 官方明确不建议把 Wan2.2 上训的 LoRA 用在 Wan-Animate 上</strong>——"训练导致的权重变化可能引发非预期行为"。所以"训个角色 LoRA + 拿 Wan-Animate 换人"这条看似自然的组合<u>不成立</u>,要么用 Animate 的参考图通路,要么在别的底座上走 LoRA。</p>
+<p><strong>② Wan-Animate 的替换模式刻意<u>不做</u>姿态重定向</strong>(为了保住环境交互),因此"<strong>替换体型差异显著的角色时会出现形变</strong>"。中国演员换成欧美体型演员正好撞这一条——这是路线 B 的硬约束,不是调参能解决的。</p>
+<p><strong>③ 2D 骨架的固有问题</strong>:空间歧义、关键点缺失或错误会直接传导;跨身份场景下密集面部关键点精度不够会"严重损害身份一致性"。<u>这正是 MoCha 撤掉结构引导要解决的问题</u>——两者的分工由此很清楚:<strong>常规镜头用 Wan-Animate,难镜头(遮挡/交互/异常姿态/复杂光照)用 MoCha。</strong></p>
+</div>
+
+<h4>LoRA 路线:训什么、要多少资源</h4>
+<div class="tbl"><table>
+<tr><th>项</th><th>具体</th></tr>
+<tr><td class="k">训练工具</td><td><strong>AI Toolkit</strong>(有 UI,支持 Wan 2.2 I2V LoRA)· <strong>Musubi-tuner</strong>(kohya-ss,专为 Wan 2.1/2.2,带 FP8 与 block-swap 省显存)· <strong>DiffSynth-Studio</strong>(Wan 官方指向的社区项目,LoRA 训练 + 逐层 offload + FP8 + 序列并行)</td></tr>
+<tr><td class="k">超参起点</td><td>rank <span class="num">32</span> / alpha <span class="num">16</span>;lr <span class="num">≈2e-4</span>;batch <span class="num">1–2</span></td></tr>
+<tr><td class="k">显存</td><td>图像 LoRA <span class="num">≈12GB</span>;视频 LoRA <span class="num">≈24GB</span>(FP8 + block-swap 有人报 16GB 跑通 I2V)</td></tr>
+<tr><td class="k">数据配方</td><td>图像:JPG/PNG + 同名 TXT caption。视频:<strong>≈2 秒片段、544×960、caption 50 词以上</strong></td></tr>
+<tr><td class="k">该不该用</td><td><strong>角色 LoRA 解决的是"这个角色长什么样",不解决"把视频里的人换掉"。</strong>换人还是要靠 Animate/MoCha/VACE 这类替换框架;LoRA 的位置是<u>固化一个反复出现的主角形象</u>(短剧续集、同一 IP 多集),以及配合 §6 的参考包工程</td></tr>
+</table></div>
+
+<h4>可以直接看效果的地方</h4>
+<ul>
+<li><strong>MoCha 项目页</strong> <a href="https://orange-3dv-team.github.io/MoCha/">orange-3dv-team.github.io/MoCha</a> — demo 覆盖多角色遮挡与交互、晃动灯光与强逆光、快速运动与物体交互、真人与卡通角色替换。<u>这几类正好是短剧的难镜头,值得逐条对照自己的素材看。</u></li>
+<li><strong>MoCha 代码</strong> <a href="https://github.com/Orange-3DV-Team/MoCha">github.com/Orange-3DV-Team/MoCha</a>;checkpoint 在 <a href="https://huggingface.co/Orange-3DV-Team/MoCha">HF Orange-3DV-Team/MoCha</a>(需另下 Wan2.1 底座)</li>
+<li><strong>Wan2.2-Animate 权重</strong> <a href="https://huggingface.co/Wan-AI/Wan2.2-Animate-14B">HF Wan-AI/Wan2.2-Animate-14B</a> · <strong>官方 ComfyUI 教程</strong> <a href="https://docs.comfy.org/tutorials/video/wan/wan2-2-animate">docs.comfy.org</a> · <strong>在线试</strong> <a href="https://wan-ai-wan2-2-animate.hf.space/">HF Space</a> · <strong>API</strong> <a href="https://replicate.com/wan-video/wan-2.2-animate-replace">Replicate</a></li>
+<li><strong>ComfyUI 工作流</strong>:<a href="https://comfy.org/workflows/video_wan2_2_14B_animate-c2c4b45b7df5/">官方 Animate 工作流</a> · <a href="https://www.runcomfy.com/comfyui-workflows/wan-2-2-animate-swap-characters-lip-sync-workflow-comfyui">换角色 + 口型同步组合工作流</a>(正好把 §3 与 §4 串起来)· <a href="https://www.runcomfy.com/comfyui-workflows/video-character-replacement-mocha-in-comfyui-seamless-character-swap">MoCha 工作流</a></li>
+<li><strong>教程视频</strong>:<a href="https://www.youtube.com/watch?v=mYL2ETf5zRI">Replace ANY Character In ANY Video — 无需手工遮罩</a> · <a href="https://www.youtube.com/watch?v=dbG-Hc6dXTA">ComfyUI 角色替换教程</a> · <a href="https://www.youtube.com/watch?v=ItAYwCp5GZA">中文:Wan2.2 Animate 人物角色替换 + 本地部署工作流演示</a> · <a href="https://www.youtube.com/watch?v=oJdT5dzrNEY">用图像训 Wan 角色 LoRA(AI Toolkit)</a></li>
+<li><strong>SwapAnyone</strong> <a href="https://github.com/PKU-YuanGroup/SwapAnyone">github.com/PKU-YuanGroup/SwapAnyone</a></li>
+</ul>
+<p class="footnote"><strong>建议的最小验证路径(半天):</strong>拿自己一条最难的镜头(有遮挡或强光变化的双人戏)→ 先上 HF Space 或 Replicate 跑 Wan-Animate 替换模式看基线 → 再用 MoCha 跑同一条 → 对比的不是"哪个好看",而是 <a href="#qc">§7</a> 那几个能算的数,尤其<strong>身份-角色绑定在多人镜头有没有错</strong>。</p>
+
+<h4>结论:换人这条路该怎么走</h4>
+<ol>
+<li><strong>不要自建 G1/G2 级联流水线。</strong>MoCha 已经点名这条路在遮挡/交互/异常姿态/困难光照下泛化差,而这四项是短剧常态——这个判断不需要自己跑实验去重新发现。</li>
+<li><strong>结构先验撤掉,身份先验改注入通路。</strong>这是本节最反直觉的一条:撤掉骨架/逐帧 mask 是对的,但不要因此认为"参考图直接丢进去就行"——裸注入会招致姿态锁死与视角塌缩,而姿态恰恰是转绘要保的东西。</li>
+<li><strong>参考包的机位覆盖度 > 参考图数量。</strong>Argus 的九宫格要"跨视角、表情、尺度、光照",并明确警告不要选成一堆近重复正脸;去掉身份导演改成随机选格,总分掉 4.27——<u>与 <a href="#consistency">§6</a> 跨镜头一致性那条结论是同一件事的两次独立出现。</u></li>
+<li><strong>把多人身份-角色绑定当一级风险</strong>,不是等出了问题再补。</li>
+<li><strong>数据难题用合成绕开。</strong>UE5 渲染配对数据这条路可控性极高,能精确设计遮挡/光照/姿态的难度分布——正好用来造 <a href="#qc">§7</a> 要的分难度集与负样本集。</li>
+</ol>
+
+<h3>3.3 全片转绘:保运动、换一切</h3>
+<div class="tbl"><table>
+<tr><th></th><th>Runway Aleph <span class="tag closed">闭源</span></th><th>Wan VACE <span class="tag open">开源权重</span></th></tr>
+<tr><td class="k">形态</td><td>in-context V2V:原片 + 一张或多张参考图 → 按新外观重渲染</td><td>Wan 家族的开源 V2V 编辑器</td></tr>
+<tr><td class="k">保留什么</td><td colspan="2">原始<strong>运动轨迹、运镜、时序</strong>——这正是转绘相对重新生成的核心价值:表演与节奏是原片最贵的部分,不该重做</td></tr>
+<tr><td class="k">参考图</td><td>一张或多张</td><td>至多 3 张</td></tr>
+<tr><td class="k">适用</td><td>质量优先、按量付费</td><td>高吞吐、参考驱动、自部署控成本</td></tr>
+</table></div>
+<p class="footnote">注:国内工具侧已出现"一键转绘"形态,宣称支持 2D 动漫 / 3D 动漫 / AI 真人风格互转并一键出多语种版本 🟠——<strong>风格互转(真人→动漫)反而是转绘最容易做好的方向</strong>,因为它主动放弃了写实保真这个最难的约束。若目标市场接受动漫化,这是一条被低估的降本路径。</p>
+
+<hr class="sep">
+
+<h2 id="lang"><span class="no">4</span>语言与口型:真正的难题是时长</h2>
+<p class="h2sub">这条轨道最容易被低估。翻译和口型都有成熟方案,但把它们串起来时会撞上一个结构性问题。</p>
+
+<h3>4.1 级联流水线的标准形态与它的裂缝</h3>
+<div class="pre">ASR(Whisper)→ 翻译(SeamlessM4T / LLM)→ TTS 声纹克隆(F5-TTS / CosyVoice 2 / MegaTTS2)
+   → 人声/环境声分离 → 混音 → 口型重绘(LatentSync / MuseTalk / OmniSync)</div>
+<p>这是当前主流,<strong>因为模块化、易调试</strong> 🟢。但它有两条裂缝:</p>
+
+<div class="callout warn">
+<span class="lbl">裂缝一 · 时长错配(最致命)</span>
+<p>译文语音时长与原文几乎不可能相等。级联方案的处理是"分离-重混":把原对白抽掉、贴上新对白、再把环境声铺回去。<strong>这个策略不成立</strong>——它没有考虑说话人与环境之间的时序与语义依赖:狗叫、关门、脚步这些环境事件是与原时长绑定的,重铺之后就<strong>对不上画面了</strong> 🟢。</p>
+<p><strong>量化:</strong>联合音视频扩散方案(JUST-DUB-IT)在困难场景的时长误差 <span class="num">0.0463 秒</span>,而级联基线是 <span class="num">1.96 秒以上</span> 🟢。<strong>近 40 倍差距</strong>,而 2 秒的偏移在 1 分钟高剪辑密度的短剧里是灾难性的。</p>
+</div>
+
+<div class="callout warn">
+<span class="lbl">裂缝二 · 口型工具本身不做翻译</span>
+<p>LatentSync 这类工具<strong>只做"把嘴改成匹配新音频"</strong>——不翻译、不 TTS、不克隆声纹 🟡。所以"用 LatentSync 做出海"实际意味着要串起三到四个独立工具,而每个接缝都是一处误差累积点与一处工程债。</p>
+</div>
+
+<h3>4.2 联合音视频扩散:2026 的新解法</h3>
+<p><strong>JUST-DUB-IT</strong> 🟢 的做法是<u>不拆</u>:在预训练音视频扩散模型(<strong>LTX-2</strong>)上做轻量 LoRA 微调,<strong>同时生成译制语音与同步口型</strong>,两个模态通过 cross-attention 互相约束。</p>
+
+<div class="tbl"><table>
+<tr><th>指标</th><th>JUST-DUB-IT</th><th>LatentSync</th><th>MuseTalk</th><th>真实视频</th></tr>
+<tr><td class="k">时长误差(困难场景)↓</td><td class="num"><strong>0.0463s</strong></td><td class="num" colspan="2">基线 1.96s+</td><td>—</td></tr>
+<tr><td class="k">音画偏移 ASync(标准/困难)</td><td class="num">2.21 / 2.44</td><td class="num">0.05 / 1.34</td><td class="num">0.70 / 5.65</td><td class="num">1.29 / 2.44</td></tr>
+<tr><td class="k">身份保持 CSIM(标准/困难)↑</td><td class="num">0.8471 / 0.6455</td><td colspan="3">—</td></tr>
+<tr><td class="k">生成成功率 ↑</td><td class="num"><strong>100%</strong></td><td class="num" colspan="2">遮罩类方案 74–80%</td><td>—</td></tr>
+<tr><td class="k">FVD ↓</td><td class="num"><strong>131.88</strong></td><td class="num" colspan="2">260+</td><td>—</td></tr>
+<tr><td class="k">WER ↓ / 声纹相似度 ↑</td><td class="num">0.2739 / 0.5578</td><td colspan="3">—</td></tr>
+</table></div>
+
+<div class="callout">
+<span class="lbl">两个必须注意的读法</span>
+<p><strong>① ASync 不是越低越好。</strong>论文明确指出 SyncNet 类指标会<strong>过拟合到正面人脸偏置</strong>——LatentSync 的 0.05 看似完美,但目标应当是<u>接近真实视频</u>(1.29 / 2.44),而 JUST-DUB-IT 的 2.21 / 2.44 正是这个位置。<strong>把 Sync 分数当越低越好的 KPI,会选出一个只在正脸镜头上好看的模型</strong>——而短剧有大量侧脸、过肩、遮挡镜头。</p>
+<p><strong>② 生成成功率 100% vs 74–80% 可能是最有商业价值的一栏。</strong>遮罩类方案有两成到四分之一的片段直接失败,而在批量生产里,<strong>失败率决定了人工兜底的工作量</strong>,它比平均质量更直接地决定单集成本。</p>
+</div>
+
+<p class="footnote">对我们的额外意义:JUST-DUB-IT 的底座 <strong>LTX-2 是开源权重的原生音视频模型</strong>,微调方式是轻量 LoRA——这意味着这条路线<strong>可自部署、可定制音色与语言</strong>,不必绑定闭源配音 API。这是当前唯一一条"联合方案 + 开源底座"的公开路径。</p>
+
+<h3>4.3 口型方案的两个流派</h3>
+<div class="tbl"><table>
+<tr><th>流派</th><th>代表</th><th>机制</th><th>特性</th></tr>
+<tr><td class="k">遮罩重绘类</td><td>MuseTalk、LatentSync</td><td>遮住嘴部区域重建;LatentSync 用音频条件的隐空间扩散直接生成唇部,不经 3D 人脸或关键点</td><td>身份与皮肤细节保持好(连痣与肤质都能保);但有失败率,且遮罩边界是伪影高发区</td></tr>
+<tr><td class="k">非遮罩类</td><td>InfiniteTalk、OmniSync、X-Dub</td><td>用 Video DiT 直接编辑,不显式遮罩</td><td>避开遮罩边界问题;计算更重</td></tr>
+<tr><td class="k">快基线</td><td>Wav2Lip</td><td>经典方案</td><td>2026 年仍是可靠的快速基线,适合做对照与低成本档</td></tr>
+</table></div>
+
+<hr class="sep">
+
+<h2 id="text"><span class="no">5</span>文字轨道:去掉旧的,可选地加新的</h2>
+
+<h3>5.1 去硬字幕 = OCR 定位 + 视频 inpainting</h3>
+<p>难点不在"擦掉",在<strong>重建被文字永久遮挡的背景</strong>——要靠邻近纹理、颜色、运动与跨帧信息补出来,效果随运动、光照、场景复杂度波动 🟡。</p>
+<div class="tbl"><table>
+<tr><th>代际</th><th>方法</th><th>特点</th></tr>
+<tr><td class="k">传统</td><td>STTN、LaMa、ProPainter、E2FGVI</td><td>成熟、开源工具链完整(社区已有整合 GUI);大面积/强运动下易糊</td></tr>
+<tr><td class="k">扩散代</td><td>DiffuEraser、Minimax-Remover、EraserDiT(均 2025)</td><td>大面积移除质量明显改善</td></tr>
+<tr><td class="k">2026</td><td><strong>SEDiT</strong>:免遮罩、一步扩散 Transformer 的字幕擦除;Netflix <strong>VOID</strong>:物理感知的大面积视频移除</td><td>免遮罩路线绕开"遮罩不准 → 过度擦除/残留"这一整类问题</td></tr>
+</table></div>
+<p class="footnote">现代 inpainting 在标准基准上可做到 SSIM &gt;95% 🟡,但<strong>标准基准与短剧实拍的差距要自己测</strong>——短剧的字幕常压在动态背景、人脸、强对比边缘上,是基准里的困难样本。</p>
+
+<h3>5.2 新文字这一步:能不做就不做</h3>
+<p>如果目标平台支持外挂字幕(soft subtitle),<strong>就不要烧进画面</strong>——外挂字幕可以多语种复用、可以修正、不会被超分与重编码破坏,而且省掉 C4 那条顺序约束。<strong>只有在平台强制硬字幕、或需要替换画面内文字(短信、招牌、标题卡)时才进入这一步</strong>,而后者本质上是"文字合成 + 透视贴合",与字幕是两个问题。</p>
+
+<hr class="sep">
+
+<h2 id="consistency"><span class="no">6</span>跨镜头一致性:短剧特有的最大难点</h2>
+<div class="callout">
+<p>短剧是<strong>高剪辑密度</strong>内容——一分钟一集里常有十几到几十个镜头,同一个角色在不同景别、光照、角度下反复出现。<strong>逐镜头独立处理必然产生"同一角色在不同镜头长得不一样"</strong>,而这是观众最敏感、也最难自动检出的失败。</p>
+<p><strong>三条工程对策:</strong></p>
+<ol>
+<li><strong>角色参考包,而不是角色参考图。</strong>为每个角色准备覆盖多景别、多角度、多光照的参考集,并按镜头匹配"最近似机位"的那一张。相关研究显示,输出质量与"目标机位到最近参考机位的角距离"高度相关——<strong>参考包的机位覆盖度比参考图数量更重要</strong>,补一张要补在离现有机位最远的位置。</li>
+<li><strong>全片统一分配,而非逐镜头独立决策。</strong>选参考图、定色调、定服装状态这些决策若各镜头独立做,一致性就是随机的。</li>
+<li><strong>一致性必须是可回归的数字,不是人眼抽查。</strong>见下节。</li>
+</ol>
+</div>
+
+<hr class="sep">
+
+<h2 id="qc"><span class="no">7</span>质检闸门:每一环配一个能算的数</h2>
+<p class="h2sub">批量生产的成本由<strong>失败率与返工率</strong>决定,不由平均质量决定。所以每一环都要有能自动跑、能回归、能报警的闸门。原则:<strong>能精确计算的信号,不要交给大模型去判断。</strong></p>
+
+<div class="tbl"><table>
+<tr><th>环节</th><th>自动闸门(能算的)</th><th>判据</th><th>需要人评的</th></tr>
+<tr><td class="k">去字幕</td><td>OCR 复检残留;inpainting 区域与邻域的纹理/亮度一致性</td><td>残留字符数 = 0;区域 SSIM 不低于阈值</td><td>动态背景上的糊斑</td></tr>
+<tr><td class="k">人物切换</td><td>逐帧身份相似度(CSIM)、其<strong>方差</strong>;姿态误差;FVD;掩码内 ΔE 肤色偏移</td><td>身份<strong>方差</strong>比均值更重要——闪烁是方差问题</td><td>"是不是同一个人"的整体观感</td></tr>
+<tr><td class="k">跨镜头一致</td><td>同角色跨镜头身份相似度矩阵;服装/发色区域色差</td><td>任意两镜头间相似度不低于阈值(报<strong>最差对</strong>,不报平均)</td><td>体态与气质一致性</td></tr>
+<tr><td class="k">配音</td><td>WER;声纹相似度;<strong>时长误差</strong>;响度规范(LUFS)</td><td>时长误差是硬闸门——它决定下游能否对齐</td><td>语气、情绪、台词本地化是否自然</td></tr>
+<tr><td class="k">口型</td><td>Sync 指标 + <strong>生成成功率</strong>;嘴部区域时序抖动</td><td>Sync <strong>接近真实视频的值</strong>,不是越低越好</td><td>侧脸/遮挡镜头的观感</td></tr>
+<tr><td class="k">整片</td><td>镜头级全维回归表,报<strong>最差镜头</strong>而非平均</td><td>任一维回退超阈值即拦</td><td>成对盲测(新版 vs 上版)</td></tr>
+</table></div>
+
+<div class="callout warn">
+<span class="lbl">三条来自评测实践的纪律</span>
+<p><strong>① 报最差值不报平均。</strong>一集里 19 个镜头完美、1 个镜头崩,平均分很好看,但那一集不能上线。判据要写成"最差镜头的分数"。</p>
+<p><strong>② 只验证"好的能过"不够,必须验证"坏的会被拦"。</strong>建一个已知坏样本集(闪烁、身份漂移、口型失步、字幕残留),要求闸门全部拦下且失败原因命中预期。否则你不知道闸门是不是形同虚设。</p>
+<p><strong>③ 闸门集的盲区 = 未来的返工来源。</strong>定期拿一份外部的失败面清单逐条对照"这一类我有没有检测器",没有的标明是"不需要 / 需要但没做 / <u>没想到</u>"。第三类才是真正的风险。</p>
+</div>
+
+<hr class="sep">
+
+<h2 id="cost"><span class="no">8</span>成本与产能量级</h2>
+<p class="h2sub">以下为行业公开报价与统计 🟠(非独立核实),用于确定量级而非精确预算。</p>
+
+<div class="tbl"><table>
+<tr><th>口径(10 集 × 每集 1 分钟 竖屏)</th><th>AI 制作</th><th>真人实拍</th></tr>
+<tr><td class="k">入门跑量档</td><td class="num">¥300 – 5,000</td><td class="num">¥0.5 – 5 万</td></tr>
+<tr><td class="k">中端商用档</td><td class="num">¥1 – 15 万</td><td class="num">¥10 – 50 万</td></tr>
+<tr><td class="k">周期</td><td class="num">约 5 天(单人 3–10 小时/10 集)</td><td class="num">约 90 天(筹备+拍摄 2–5 天起)</td></tr>
+</table></div>
+
+<ul>
+<li><strong>同语种重制</strong>:投入不足全新制作的 <span class="num">1/10</span> 🟠</li>
+<li><strong>本地化压缩比</strong>:翻译→配音→换脸整条链路成本据称降低 <span class="num">15×</span> 🟠</li>
+<li><strong>译制吞吐</strong>:1 小时视频最快 10 分钟出成品(自动识别原字幕、翻译、时间轴对齐、多语种嵌入)🟠</li>
+<li><strong>市场</strong>:2026 年海外 AI 剧/漫剧市场规模预计 <span class="num">6.5 亿美元</span>,同比 6 倍 🟠</li>
+</ul>
+
+<div class="callout tgt">
+<span class="lbl">但要把 GPU 成本单独算</span>
+<p>上面的报价多为"工具订阅 + 人力"口径。若走自部署路线,<strong>换脸一环按 LivingSwap 量级就是 1 分钟成片 ≈ 1 GPU-小时</strong>,加上转绘、口型、inpainting,单集 GPU 成本会显著高于"几百元"这个直觉。<strong>自部署的经济性来自批量与复用,不来自单集</strong>——所以路线选型必须绑定产量假设。</p>
+</div>
+
+<hr class="sep">
+
+<h2 id="risk"><span class="no">9</span>风险登记</h2>
+<div class="tbl"><table>
+<tr><th>风险</th><th>说明</th><th>缓解</th></tr>
+<tr><td class="k">肖像与人格权</td><td>换脸涉及两侧:原演员的表演被复用、以及<strong>新面孔的来源</strong>。用真人面孔需授权;用合成面孔需确认其训练来源合规</td><td>优先使用<strong>可授权的合成身份</strong>并留存生成凭证;原片授权合同里明确"AI 改制"条款</td></tr>
+<tr><td class="k">平台合成内容政策</td><td>各国与各平台对 AI 生成/换脸内容的标注与准入要求不一致,且在变化</td><td>按目标市场逐一核查;保留可切换的"标注"合成层</td></tr>
+<tr><td class="k">声纹权利</td><td>声纹克隆同样涉及人格权,部分司法辖区已明确</td><td>用授权音色库或合成音色;不复刻原演员声纹</td></tr>
+<tr><td class="k">文化改写不足</td><td>只换脸不改场景/道具/剧情逻辑,会落进"看起来是中国剧配了外语"的恐怖谷</td><td>见 §2 的 20 帧地域标识自测;必要时升级路线层级</td></tr>
+<tr><td class="k">质量不稳定</td><td>批量生产中失败率(而非平均质量)决定成本</td><td>§7 的闸门 + 失败率监控;<strong>把生成成功率当一级指标</strong></td></tr>
+</table></div>
+
+<hr class="sep">
+
+<h2>建议的落地顺序</h2>
+<ol>
+<li><strong>先做 20 帧地域标识自测,定路线层级</strong>(§2)——这一步半天,决定后面所有投入的量级。</li>
+<li><strong>先搭质检闸门,再搭生产流水线</strong>(§7)。没有闸门时,批量跑出来的东西无法判断好坏,等于白跑。</li>
+<li><strong>用一集做端到端打通</strong>,严格按 C1–C5 顺序,记录每环的失败率与耗时。</li>
+<li><strong>语言轨优先验证联合方案</strong>(§4.2)——时长错配是唯一会污染整条流水线的问题,而它在单条 demo 上不暴露。</li>
+<li><strong>跨镜头一致性用参考包工程解决,不要靠调 prompt</strong>(§6)。</li>
+</ol>
+
+<p class="footnote" style="margin-top:36px"><strong>来源</strong> 🟢 一手论文:MLLM 视频翻译综述(arXiv 2604.11283)· LivingSwap(2512.07951)· JUST-DUB-IT(2601.22143)· SwapAnyone(2503.09154)· <strong>MoCha(2601.08587)</strong>· Vera(2607.20247)· Argus(2606.11670)· DreamSwapV(2508.14465)· CanonSwap(2507.02691)· GaussianSwap(2601.05511)· SEDiT(2605.14894)· MuseTalk(2410.10122)· HoliDubber(2606.09098)。🟡 权威三方:InsightFace 2026-03 换脸研究综述 · sync.so 对 LatentSync 的评测 · 视频 inpainting 工具链评测。🟠 行业数据与商业宣称(未独立核实):短剧成本对比与出海市场统计、一键转绘产品宣称、本地化吞吐宣称。<br><br><em>已知局限:成本与市场数字为行业公开口径,未独立核实;跨论文指标不可直接横比(数据集与口径不同);短剧实拍素材上的表现与论文基准存在差距,需自测。</em></p>
+</div>
