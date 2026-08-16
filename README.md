@@ -22,6 +22,7 @@
   - [Text-to-Video (T2V)](#text-to-video-t2v)
   - [Image-to-Video (I2V)](#image-to-video-i2v)
   - [Video Editing & Inpainting](#video-editing--inpainting)
+  - [Character Replacement & Video Dubbing](#character-replacement--video-dubbing)
   - [Human Motion & Avatar](#human-motion--avatar)
 - [Video Understanding](#video-understanding)
   - [Video-LLMs](#video-llms)
@@ -151,6 +152,27 @@
 | **TokenFlow** | [Consistent Diffusion Editing](https://arxiv.org/abs/2307.10373) | [GitHub](https://github.com/omerbt/TokenFlow) | Temporal consistency via tokens |
 | **CoDeF** | [Content Deformation Fields](https://arxiv.org/abs/2308.07926) | [GitHub](https://github.com/qiuyu96/CoDeF) | Canonical representation |
 | **ProPainter** | [Video Inpainting with Propagation](https://arxiv.org/abs/2309.03897) | [GitHub](https://github.com/sczhou/ProPainter) | SOTA video inpainting |
+| **VACE** | [Wan All-in-One Video Editing](https://github.com/ali-vilab/VACE) | [GitHub](https://github.com/ali-vilab/VACE) | Open-weights V2V editor; reference / structure / subject / pose / motion preservation modes |
+| **Runway Aleph** | [In-context V2V](https://runwayml.com/) | - | Re-renders footage from reference images while preserving motion, camera and timing (proprietary) |
+| **DiffuEraser / EraserDiT / Minimax-Remover** | Diffusion video inpainting (2025) | - | Large-area removal; supersedes STTN/E2FGVI for subtitle & watermark erasure |
+| **SEDiT** | [Mask-Free Subtitle Erasure via One-Step DiT](https://arxiv.org/pdf/2605.14894) | - | Sidesteps the "inaccurate mask → over-erase / residue" failure class |
+
+### Character Replacement & Video Dubbing
+
+*Swapping who is in the shot, and what language they speak — the two halves of video localization. See the [drama localization note](research/drama-localization/) for the full pipeline.*
+
+| Name | Paper | Code / Weights | Notes |
+| :--- | :--- | :--- | :--- |
+| **Wan2.2-Animate** | [Unified Character Animation and Replacement](https://arxiv.org/html/2509.14055v1) | [HuggingFace](https://huggingface.co/Wan-AI/Wan2.2-Animate-14B) | **Apache 2.0**; one model, two modes (animate / replace); skeleton + implicit facial features + Relighting LoRA; native ComfyUI workflow |
+| **MoCha** | [End-to-End Video Character Replacement without Structural Guidance](https://arxiv.org/abs/2601.08587) | [GitHub](https://github.com/Orange-3DV-Team/MoCha) | CVPR 2026; **needs only a single first-frame mask** — no skeleton, no depth, no per-frame segmentation. Built on Wan2.1 |
+| **SwapAnyone** | [Swapping Any Person into Any Video](https://arxiv.org/abs/2503.09154) | [GitHub](https://github.com/PKU-YuanGroup/SwapAnyone) | Defines identity / motion / environment tri-consistency; ships HumanAction-32K |
+| **ReplaceAnyone** | [Replace Anyone in Videos](https://arxiv.org/html/2409.19911v2) | [GitHub](https://github.com/ali-vilab/UniAnimate) | Image-conditioned inpainting + pose guidance; applies to Wan2.1 |
+| **HunyuanCustom** | Subject-consistent customized video generation | [HuggingFace](https://huggingface.co/tencent/HunyuanCustom) | Weights released 2025-05 |
+| **Vera** | [Identity-Faithful Human Subject-to-Video](https://arxiv.org/html/2607.20247) | - | Layer-wise reference attention; targets identity-role misbinding in multi-person scenes |
+| **Argus** | [Multi-View Identity Mosaic Injection](https://arxiv.org/html/2606.11670) | - | 3×3 identity mosaic on the native token path; +12.6 Yaw / +15.1 Occ on stress tests |
+| **LatentSync** | Audio-conditioned latent diffusion lip sync | [GitHub](https://github.com/bytedance/LatentSync) | Edits the mouth directly in latent space; no 3D face or landmarks |
+| **MuseTalk** | [Real-Time High-Fidelity Video Dubbing](https://arxiv.org/pdf/2410.10122) | [GitHub](https://github.com/TMElyralab/MuseTalk) | Inpainting-based real-time lip sync |
+| **JUST-DUB-IT** | [Video Dubbing via Joint Audio-Visual Diffusion](https://arxiv.org/html/2601.22143v1) | - | LoRA on LTX-2; generates translated speech **and** lip motion jointly — 0.046s duration error vs 1.96s+ for cascades |
 
 ### Human Motion & Avatar
 
@@ -158,8 +180,11 @@
 | :--- | :--- | :--- | :--- |
 | **EMO** | [Emote Portrait Alive](https://arxiv.org/abs/2402.17485) | [GitHub](https://github.com/HumanAIGC/EMO) | Audio-driven portrait |
 | **MagicAnimate** | [Temporal Consistent Human Animation](https://arxiv.org/abs/2311.16498) | [GitHub](https://github.com/magic-research/magic-animate) | ControlNet for humans |
-| **Champ** | [Controllable & Consistent Human Animation](https://arxiv.org/abs/2403.14781) | [GitHub](https://github.com/fudan-generative-vision/champ) | 3D-aware human motion |
+| **Champ** | [Controllable & Consistent Human Animation](https://arxiv.org/abs/2403.14781) | [GitHub](https://github.com/fudan-generative-vision/champ) | SMPL-derived 3D conditions (depth/normal/semantics) |
+| **MimicMotion** | [Confidence-aware Pose Guidance](https://arxiv.org/abs/2406.19680) | [GitHub](https://github.com/Tencent/MimicMotion) | Handles pose-detector noise; regional loss amplification |
+| **UniAnimate-DiT** | [Human Image Animation with Large-Scale Video DiT](https://arxiv.org/pdf/2504.11289) | [GitHub](https://github.com/ali-vilab/UniAnimate-DiT) | Wan2.1-based; training + inference code released |
 | **MusePose** | [Pose-Driven Image-to-Video](https://github.com/TMElyralab/MusePose) | [GitHub](https://github.com/TMElyralab/MusePose) | Open-source character animation |
+| **LivingSwap** | [High-Fidelity Face Swapping for Cinematic Quality](https://arxiv.org/html/2512.07951) | - | Keyframe identity injection + video reference completion; wins on pose error and FVD, not on raw ID similarity |
 
 ---
 
@@ -282,6 +307,8 @@
 ## Research Notes
 
 *In-house deep-dive analyses (sources cited, claims adversarially verified where marked).*
+
+- 📂 [**Short Drama Localization** (转绘出海)](research/drama-localization/) (2026-08) - *Turning a Chinese short drama into an overseas one: three parallel tracks (video / audio / text) with five hard ordering constraints, the four route tiers for recasting, the "prior retreat" ladder for person replacement (hand-crafted cascade → pose-guided → mask-guided → end-to-end), and an inventory of what is downloadable today with the trap each one carries.*
 
 - 📂 [**Seedance vs Open-Source Gap** (topic series)](research/seedance-gap/) (2026-07) - *Root-cause analysis of the Seedance-vs-open-source quality gap: post-training (multi-dim reward-model RLHF) and data curation dominate, not architecture. 7-part series (updated 2026-08): [benchmark gap](research/seedance-gap/01-benchmark-gap.md) · [Seedance recipe](research/seedance-gap/02-seedance-recipe.md) · [open-source landscape](research/seedance-gap/03-open-source-landscape.md) · [post-training methods](research/seedance-gap/04-posttraining-methods.md) · [distillation & multi-shot](research/seedance-gap/05-distillation-multishot.md) · [roadmap & feasibility](research/seedance-gap/06-roadmap-feasibility.md) · [MiniMax H3](research/seedance-gap/07-minimax-h3.md).*
 
