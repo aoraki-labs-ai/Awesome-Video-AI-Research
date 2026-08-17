@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>视频生成质量评测:框架技术深拆</title>
+<style>
+
+:root{
+  --bg:#f6f7f6; --surface:#ffffff; --surface2:#eef1ef; --ink:#1d2422; --muted:#5c6763; --faint:#8a938f;
+  --line:#dde3e0; --accent:#0d7a69; --accent-ink:#0a5f52; --accent-soft:#e2f0ed;
+  --c-bench:#2f6fad; --c-bench-bg:#e7eff7; --c-judge:#b25d1d; --c-judge-bg:#f8ede1;
+  --c-meta:#6f56a8; --c-meta-bg:#efeaf7; --c-rubric:#3a7d44; --c-rubric-bg:#e6f1e7;
+  --warn:#a04545; --warn-bg:#f7e9e9; --code:#39433f;
+}
+:root:not([data-theme="light"]){}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#131715; --surface:#1a201d; --surface2:#212824; --ink:#e6ebe8; --muted:#a2ada8; --faint:#77817c;
+    --line:#2c342f; --accent:#3fb9a5; --accent-ink:#5fcdbb; --accent-soft:#173730;
+    --c-bench:#7aaede; --c-bench-bg:#1b2a38; --c-judge:#dd9a5b; --c-judge-bg:#33261a;
+    --c-meta:#a892d8; --c-meta-bg:#292138; --c-rubric:#7fb98a; --c-rubric-bg:#1d2e20;
+    --warn:#d98a8a; --warn-bg:#382222; --code:#c7d0cc;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#131715; --surface:#1a201d; --surface2:#212824; --ink:#e6ebe8; --muted:#a2ada8; --faint:#77817c;
+  --line:#2c342f; --accent:#3fb9a5; --accent-ink:#5fcdbb; --accent-soft:#173730;
+  --c-bench:#7aaede; --c-bench-bg:#1b2a38; --c-judge:#dd9a5b; --c-judge-bg:#33261a;
+  --c-meta:#a892d8; --c-meta-bg:#292138; --c-rubric:#7fb98a; --c-rubric-bg:#1d2e20;
+  --warn:#d98a8a; --warn-bg:#382222; --code:#c7d0cc;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  font-size:15.5px;line-height:1.75;-webkit-font-smoothing:antialiased}
+.wrap{max-width:920px;margin:0 auto;padding:48px 24px 96px}
+header.doc{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:8px}
+.kicker{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:12px;letter-spacing:.18em;color:var(--accent);text-transform:uppercase;margin:0 0 10px}
+h1{font-size:30px;line-height:1.3;margin:0 0 10px;font-weight:700;letter-spacing:.01em;text-wrap:balance}
+.sub{color:var(--muted);margin:0;max-width:64ch}
+.meta-line{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--faint)}
+nav.toc{display:flex;flex-wrap:wrap;gap:8px;padding:16px 0 8px;border-bottom:1px solid var(--line);margin-bottom:36px}
+nav.toc a{font-size:12.5px;color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:3px;padding:3px 10px;background:var(--surface)}
+nav.toc a:hover,nav.toc a:focus-visible{color:var(--accent-ink);border-color:var(--accent)}
+h2{font-size:22px;margin:56px 0 6px;font-weight:700;letter-spacing:.01em}
+h2 .no{font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--accent);margin-right:10px;font-weight:600}
+h3{font-size:17px;margin:32px 0 8px;font-weight:700}
+.h2sub{color:var(--muted);font-size:13.5px;margin:0 0 18px;max-width:70ch}
+p{margin:0 0 14px;max-width:74ch}
+a{color:var(--accent-ink);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+strong{font-weight:650}
+.chip{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.06em;padding:1px 8px;border-radius:3px;vertical-align:2px;white-space:nowrap}
+.chip.bench{color:var(--c-bench);background:var(--c-bench-bg)}
+.chip.judge{color:var(--c-judge);background:var(--c-judge-bg)}
+.chip.meta{color:var(--c-meta);background:var(--c-meta-bg)}
+.chip.rubric{color:var(--c-rubric);background:var(--c-rubric-bg)}
+.chip.img{color:var(--warn);background:var(--warn-bg)}
+.taxo{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin:20px 0 8px}
+.taxo .cell{background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--line);border-radius:4px;padding:14px 16px}
+.taxo .cell.b{border-top-color:var(--c-bench)} .taxo .cell.j{border-top-color:var(--c-judge)}
+.taxo .cell.m{border-top-color:var(--c-meta)} .taxo .cell.r{border-top-color:var(--c-rubric)}
+.taxo h4{margin:0 0 4px;font-size:14.5px}
+.taxo .q{font-size:12.5px;color:var(--muted);margin:0 0 8px;line-height:1.55}
+.taxo .who{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--faint);line-height:1.7}
+.tbl{overflow-x:auto;margin:16px 0 22px;border:1px solid var(--line);border-radius:4px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;line-height:1.55}
+th{font-size:12px;letter-spacing:.05em;text-align:left;color:var(--muted);background:var(--surface2);
+  padding:8px 12px;border-bottom:1px solid var(--line);white-space:nowrap;font-weight:600}
+td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td.k,th.k{white-space:nowrap;font-weight:650}
+.num{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-variant-numeric:tabular-nums;font-size:12.5px}
+.callout{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:4px;padding:14px 18px;margin:18px 0;font-size:14px}
+.callout.warn{border-left-color:var(--warn)}
+.callout p:last-child{margin-bottom:0}
+.spec{display:grid;grid-template-columns:120px 1fr;gap:2px 16px;margin:12px 0 18px;font-size:13.5px}
+.spec dt{color:var(--faint);font-size:12px;letter-spacing:.04em;padding-top:2px}
+.spec dd{margin:0}
+@media (max-width:560px){.spec{grid-template-columns:1fr}.spec dt{padding-top:8px}}
+.pipeline{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;line-height:1.9;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:14px 18px;margin:14px 0 20px;overflow-x:auto;white-space:pre;color:var(--code)}
+.footnote{font-size:12.5px;color:var(--faint);margin-top:6px}
+.src{font-size:12px;color:var(--faint)}
+hr.sep{border:none;border-top:1px solid var(--line);margin:48px 0}
+.legend{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+<header class="doc">
+  <p class="kicker">Seedance-Gap · Eval Deep-Dive</p>
+  <h1>视频生成质量评测:框架技术深拆与横评</h1>
+  <p class="sub">把「用什么评」拆到机制层:每个框架内部是什么打分器、怎么和人对齐、数字是多少、能外推到哪。覆盖模型级 benchmark、样本级 judge/RM、评裁判的 meta 层、以及从偏好对学尺子的 rubric 学习。</p>
+  <div class="meta-line"><span>2026-08-10</span><span>video-research · seedance-gap 专题配套</span><span>所有数字来自论文/项目页一手来源</span></div>
+</header>
+
+<nav class="toc" aria-label="目录">
+  <a href="#map">0 分类地图</a>
+  <a href="#mjbench">1 MJ-Bench(那句话的证据链)</a>
+  <a href="#modelbench">2 模型级 benchmark</a>
+  <a href="#judges">3 样本级 judge / RM</a>
+  <a href="#metalayer">4 Meta 层:评裁判</a>
+  <a href="#rubric">5 Rubric 学习</a>
+  <a href="#compare">6 总对比表</a>
+  <a href="#stack">7 映射到三层栈</a>
+</nav>
+
+<h2 id="map"><span class="no">0</span>先分类:四种完全不同的工具</h2>
+<p class="h2sub">"benchmark 还是 VLM 评"之所以谈不清,是因为四类工具经常被混为一谈。它们评的对象不同、回答的问题不同、在迭代闭环里的位置也不同。</p>
+
+<div class="taxo">
+  <div class="cell b">
+    <h4>模型级 Benchmark <span class="chip bench">BENCHMARK</span></h4>
+    <p class="q">评<strong>模型</strong>:固定 prompt 套件 + 固定评估器,输出一张模型能力表。回答"哪个模型强、强在哪个维度"。</p>
+    <p class="who">VBench-2.0 · Video-Bench · VMBench · VideoPhy-2 · EvalCrafter</p>
+  </div>
+  <div class="cell j">
+    <h4>样本级 Judge / RM <span class="chip judge">JUDGE·RM</span></h4>
+    <p class="q">评<strong>单条样本或样本对</strong>:给任意视频打分/排序。回答"这条比那条好吗"。能进训练闭环,也能当评测器。</p>
+    <p class="who">VideoScore2 · UnifiedReward 系 · VideoReward(VideoAlign)· VisionReward</p>
+  </div>
+  <div class="cell m">
+    <h4>Meta:评裁判 <span class="chip meta">META</span></h4>
+    <p class="q">评<strong>裁判本身</strong>:哪个 judge/RM 和人最一致、盲区在哪。回答"我该信哪把尺子、信到什么程度"。</p>
+    <p class="who">MJ-Bench(图像) · VideoRewardBench · JudgeFit · Fooling LVLM Judges</p>
+  </div>
+  <div class="cell r">
+    <h4>Rubric 学习 <span class="chip rubric">RUBRIC</span></h4>
+    <p class="q"><strong>造尺子</strong>:从偏好对里自动学出加权自然语言准则,替代人手写 rubric / 黑箱 scalar RM。</p>
+    <p class="who">AutoRubric-T2I · Auto-Rubric as Reward · EvalGen(流程原型)</p>
+  </div>
+</div>
+<p class="legend">页面内所有框架都带这四色标签;技术路线的差异比"用不用 VLM"重要得多。</p>
+
+<hr class="sep">
+
+<h2 id="mjbench"><span class="no">1</span>MJ-Bench:"专用小模型 vs VLM"这句话的完整证据链 <span class="chip meta">META</span> <span class="chip img">图像域</span></h2>
+<p class="h2sub">先把我上次那句话补全并标出边界——它是图像域结论,外推到视频要打折。</p>
+
+<dl class="spec">
+  <dt>评什么</dt><dd>22+ 个多模态"裁判",在同一批<strong>可验证偏好对</strong>上比准确率(错误事实/质量缺陷/安全隐患等构造出的成对样本)</dd>
+  <dt>裁判池</dt><dd>三类:<strong>专用打分模型</strong>(CLIP-score、PickScore、HPS-v2.1、ImageReward——百 M 到 B 级参数,输出标量)/ <strong>开源 VLM</strong>(LLaVA 系、InternVL-chat)/ <strong>闭源 VLM</strong>(GPT-4o、GPT-4V、Gemini Ultra、Claude 3 Opus)</dd>
+  <dt>四个视角</dt><dd>图文对齐(物体存在/属性/动作/位置/计数)· 安全(毒性/NSFW)· 画质(失真/模糊)· 偏见(职业×人口属性)</dd>
+  <dt>协议</dt><dd>成对二选一;数值分 [0-10] 与 Likert 两种反馈形态都测;指标含带/不带 tie 的准确率、NDS、GES;另用微调 SD-v1.5 做端到端人评回验</dd>
+</dl>
+
+<h3>四条结论(逐条,不是一句话)</h3>
+<div class="tbl"><table>
+<tr><th>结论</th><th>细节</th><th>对我们的含义</th></tr>
+<tr><td class="k">① 专用打分模型赢在对齐与画质</td><td>PickScore/HPS-v2.1/ImageReward 在 text-image alignment 和 image quality 两个视角上超过 VLM judges——这两个维度<strong>有可计算的判别信号</strong>,不需要世界知识</td><td>客观可算维度(对齐、画质、闪烁、ID 一致性)优先用专用模型/检测器,便宜且更准</td></tr>
+<tr><td class="k">② 闭源 VLM 综合最好</td><td>GPT-4o 平均分最高;VLM 的优势集中在<strong>需要推理的维度</strong>(安全、偏见)</td><td>物理/常识/叙事类开放维度才是 VLM judge 的用武之地</td></tr>
+<tr><td class="k">③ 反馈形态影响精度</td><td>VLM 用自然语言 Likert 档位比直接给 0-10 数值分<strong>更准更稳</strong></td><td>我们的 L1 judge 输出应设计为档位+理由,不是裸数值</td></tr>
+<tr><td class="k">④ 开源 VLM 在安全/偏见上不弱</td><td>开源 VLM 在 safety 与 bias 检测上表现相对更强</td><td>合规类闸门可以自部署,不必依赖闭源</td></tr>
+</table></div>
+
+<div class="callout warn">
+<p><strong>外推边界:</strong>MJ-Bench 是<strong>图像域</strong>的 meta 评测(2024)。视频域的对应证据要看 §4 的 VideoRewardBench(视频理解 RM)与 §3 中各视频 RM 的对比实验;方向一致——判别信号强的维度小模型占优、推理维度大模型占优——但视频多了<strong>时序维度</strong>(运动/物理),那里目前既没有足够强的专用模型、VLM 也不可靠(见 VideoPhy-2 的 22% 与 JudgeFit 的 per-VLM 盲区),是三类工具都要组合使用的地带。</p>
+</div>
+
+<hr class="sep">
+
+<h2 id="modelbench"><span class="no">2</span>模型级 Benchmark:四套技术框架 <span class="chip bench">BENCHMARK</span></h2>
+
+<h3>2.1 VBench-2.0 —— "通才 VLM + 专才检测器"混合体,18 维全拆</h3>
+<dl class="spec">
+  <dt>定位</dt><dd>从 VBench 1.0 的"表面保真"(像素质量/基础对齐)升级到"内在保真":物理、常识、人体、可控性、创意。每维约 70 条专用 prompt。</dd>
+  <dt>验证</dt><dd>每维做大规模人工偏好标注,报 Spearman 相关(逐维,论文 Fig.5);不是拍脑袋的自动指标。</dd>
+</dl>
+<p>它的真正价值在<strong>每个维度背后是什么打分器</strong>——这就是"能算的不让 VLM 判"在工业级 benchmark 里的实现:</p>
+<div class="tbl"><table>
+<tr><th>类别</th><th>维度</th><th>打分器(技术)</th><th>类型</th></tr>
+<tr><td rowspan="3" class="k">人体保真</td><td>Human Anatomy</td><td>ViT 异常检测器,15 万真实/生成帧训练,专抓手/脸/身体畸变</td><td>专才</td></tr>
+<tr><td>服装时序一致</td><td>视频多问 VQA(冗余提问降幻觉)</td><td>VLM</td></tr>
+<tr><td>身份时序一致</td><td>RetinaFace 检测 + ArcFace 人脸特征相似度</td><td>专才</td></tr>
+<tr><td rowspan="2" class="k">创意</td><td>Diversity</td><td>VGG-19 特征:Gram 矩阵(风格)+ L1(内容),每 prompt 20 样本</td><td>专才</td></tr>
+<tr><td>Composition</td><td>LLaVA-video-7B 多问 VQA</td><td>VLM</td></tr>
+<tr><td rowspan="4" class="k">可控性(7 维)</td><td>动态空间关系 / 动态属性</td><td>多问 VQA 流水线(中途变色/变尺寸/换位置是否发生)</td><td>VLM</td></tr>
+<tr><td>动作次序 / 人际交互</td><td>VLM 生成 caption → LLM 与 prompt 比对(文本对齐路线)</td><td>VLM+LLM</td></tr>
+<tr><td>复杂景观 / 复杂剧情</td><td>150+ 词长 prompt 的文本对齐评估</td><td>VLM+LLM</td></tr>
+<tr><td>相机运动</td><td>CoTracker-v2 点跟踪 + 9 类运镜启发式判定</td><td>专才</td></tr>
+<tr><td rowspan="2" class="k">物理</td><td>力学/热学/材料状态变化</td><td>GPT-4o 预生成现象描述 → 多问 VQA 核对(重力/浮力/汽化/燃烧/溶解…)</td><td>VLM</td></tr>
+<tr><td>多视角几何一致</td><td>SIFT+FLANN+RANSAC 特征匹配,RAFT 光流做相机运动归一</td><td>专才</td></tr>
+<tr><td rowspan="2" class="k">常识</td><td>运动合理性</td><td>多问 VQA + 显式后果核查("咬了一口后食物变少了吗")</td><td>VLM</td></tr>
+<tr><td>实例保持</td><td>YOLO-World 开放词表检测,逐帧数物体</td><td>专才</td></tr>
+</table></div>
+<p class="footnote">读法:18 维里约一半是专才模型(异常检测/人脸/跟踪/几何/检测器),另一半是"多问 VQA + 文本对齐"两种 VLM 用法。<b>专才负责有判别信号的,VLM 负责要理解语义的</b>——和 MJ-Bench 结论互为印证。<span class="src">来源:arXiv 2503.21755</span></p>
+
+<h3>2.2 Video-Bench —— 把"VLM 打分不稳"工程化解决的范本</h3>
+<dl class="spec">
+  <dt>定位</dt><dd>全维度用 MLLM(GPT-4o judge)评视频生成,9 个维度分两组:视频-条件对齐 5 维(物体/动作/颜色/场景/整体一致)+ 视频质量 4 维(成像/美学/时序一致/运动效果)。</dd>
+</dl>
+<p>两个机制值得直接抄:</p>
+<div class="pipeline">Chain-of-Query(跨模态比对难 → 迭代问答)
+  ① MLLM 先生成视频描述 → ② LLM 按维度出针对性问题
+  → ③ MLLM 带着问题重看视频作答 → ④ 用全部对话史 + 评分指引出分
+
+Few-shot Scoring(绝对分没有锚 → 同批互为参照)
+  同一 prompt 的多个视频一起进上下文,互为隐式参照再打分
+  → 相关性提升 ~10.3%</div>
+<p><strong>与人的一致性(Spearman)</strong>:<span class="num">0.50</span>(全维平均),而<strong>人和人之间也只有 <span class="num">0.52</span></strong>——即 MLLM judge 已逼近人际一致性天花板;最好的维度是视频-文本一致(<span class="num">0.75</span>)。这也是"judge 别追求超过人际一致性"的量化提醒。<span class="src">来源:arXiv 2504.04907</span></p>
+
+<h3>2.3 VMBench —— 运动专项:五个指标,五套完全不同的技术栈</h3>
+<p>我们最关心的 motion quality 维度,VMBench 给了最完整的"专才组合"参考(1050 条经 GPT-4o+DeepSeek-R1+人工三重过滤的运动 prompt,覆盖流体/生物/机械/天气/群体/能量传递六类运动):</p>
+<div class="tbl"><table>
+<tr><th>指标</th><th>测什么</th><th>技术栈</th></tr>
+<tr><td class="k">CAS 常识遵循</td><td>是否符合物理/常识</td><td>VideoMAEv2 时空 ViT,用 VideoReward 偏好模型预标的 1 万条视频训练,5 档 MOS</td></tr>
+<tr><td class="k">MSS 运动平滑</td><td>运动中的时序伪影/模糊</td><td>Q-Align 美学打分器逐帧质量衰减检测 + 真实视频统计出的场景自适应阈值</td></tr>
+<tr><td class="k">OIS 物体完整</td><td>运动中的非合理形变</td><td>MMPose 关键点 → 解剖学长度/角度约束校验(阈值来自自然运动数据)</td></tr>
+<tr><td class="k">PAS 可感运动幅度</td><td>主体运动量(剔除相机运动)</td><td>GroundingDINO 检测 + GroundedSAM 掩码 + CoTracker 跟踪 → 位移归一化</td></tr>
+<tr><td class="k">TCS 时序连贯</td><td>物体消失/重现是否合理</td><td>GroundedSAM2 实例分割跟踪 + CoTracker 轨迹校验 + 遮挡/出画规则过滤</td></tr>
+</table></div>
+<p><strong>人对齐提升</strong>:五指标对人评的 Spearman 相关平均比既有指标高 <span class="num">+35.3%</span>(逐指标 54.5%–77.1%),成对判别与人一致 <span class="num">70.6%</span>。注意它的 CAS 本质是"用 RM 蒸馏出的专用小模型"——<b>专才不一定要人工标,可以从 RM 蒸馏</b>,这条路线对我们 L0 很有价值。<span class="src">来源:arXiv 2503.10076</span></p>
+
+<h3>2.4 VideoPhy-2 —— 物理:唯一敢报"很低的数"的 benchmark</h3>
+<dl class="spec">
+  <dt>构成</dt><dd>200 类真实动作、3940 条 prompt(动作中心,替代 1.0 的材料互动);人评 5 档 Likert,三轴:语义遵循 / 物理常识 / <strong>显式物理规则命中</strong>(每条视频标注违反了哪条规则)</dd>
+  <dt>AutoEval</dt><dd>附带 VideoPhy-2-AutoEval 自动评估器(在其人评数据上训练),供快速回归</dd>
+  <dt>结果</dt><dd>hard 子集上最好模型 joint(语义+物理同时达标)仅 <span class="num">22%</span>(v1 报告;后续版本收录更强模型后约 <span class="num">47.7%</span>)——<strong>质量守恒/动量守恒类规则是重灾区</strong></dd>
+</dl>
+<p>它的价值不在日常回归(维度窄),而在于:①物理 hard 集是真正拉得开模型差距的"最差集"(R2 的 hardmin 候选);②"显式规则标注"的做法是我们做物理维度 rubric 的模板。<span class="src">来源:arXiv 2503.06800</span></p>
+
+<hr class="sep">
+
+<h2 id="judges"><span class="no">3</span>样本级 Judge / RM:四条技术路线 <span class="chip judge">JUDGE·RM</span></h2>
+<p class="h2sub">同样是"给视频打分",四家的模型形态、训练法、输出物完全不同——这决定了它们分别适合当训练信号还是评测器。</p>
+
+<div class="tbl"><table>
+<tr><th></th><th>VideoReward<br>(VideoAlign)</th><th>VisionReward</th><th>VideoScore2</th><th>UnifiedReward 家族</th></tr>
+<tr><td class="k">形态</td><td>scalar RM(VLM backbone 回归头)</td><td>checklist RM:64 个二元判断题 + 线性加权</td><td>生成式 judge:先写 CoT 分析再给分</td><td>统一生成式 RM:成对排序 + 逐点打分双模式</td></tr>
+<tr><td class="k">训练数据</td><td>182k 成对偏好(16k prompts × 12 个 T2V 模型 × 108k 视频),VQ/MQ/TA 三维分开专业标注</td><td>视频 33k 条 / ~2M 问答对(图像另有 48k/3M)</td><td>VideoFeedback2:27,168 条人标视频,三维数值分 + 推理轨迹</td><td>EvalMuse/HPD/LiFT-HRA/LLaVA-Critic/ShareGPTVideo/VideoDPO/VideoFeedback 等混合;2.0 版 ~700K</td></tr>
+<tr><td class="k">训练方法</td><td>Bradley-Terry 式偏好回归</td><td>判断题监督 + 线性权重拟合;MPO 只取全维占优 pair</td><td><strong>SFT → GRPO 两阶段</strong>(Qwen2.5-VL-7B 底座)</td><td>SFT(+Think 版用 RL 微调出 CoT;-Flex 版自适应推理);2B–32B 多尺寸(Qwen2.5/3-VL 底座)</td></tr>
+<tr><td class="k">维度</td><td>VQ 视觉 / MQ 运动 / TA 文本对齐</td><td>9 维 20 子维(可解释)</td><td>视觉质量 / 文本对齐 / 物理常识</td><td>Alignment / Coherence / Style(+理解任务)</td></tr>
+<tr><td class="k">关键数字</td><td>显著超前代视频 RM;DanceGRPO 用它做出 MQ +181%</td><td>偏好预测超 VideoScore <span class="num">+17.2%</span>;下游优化胜率 <span class="num">+31.6%</span></td><td>VideoScore-Bench-v2 <span class="num">44.35%</span>(+5.94);OOD 四 bench 平均 <span class="num">50.37%</span>(+4.32),超 VideoReward/VisionReward/MLLM-prompting</td><td>Best-of-4 选样:<span class="num">84.5</span> vs ImageReward 82.4 / HPS 82.1(T2I 例)</td></tr>
+<tr><td class="k">在闭环里的位置</td><td><strong>训练 reward 首选</strong>(开源、flow 原生算法配套 Flow-DPO/RWR/NRG)</td><td>可审计的第二 RM;MPO 防维度互斥</td><td><strong>L1 评测 judge 候选</strong>:带理由输出直接喂归因;也可 Best-of-N</td><td>judge 与 RM 一体化方案;自带三条 DPO 流水线(含 VideoDPO 对接)</td></tr>
+</table></div>
+
+<div class="callout">
+<p><strong>形态之争的本质:</strong>scalar RM 快而不可解释(适合当 RL 训练信号,梯度友好);checklist/rubric RM 可审计(适合当标准沉淀);生成式 CoT judge 慢但自带失败理由(适合当评测器,理由直接进归因)。<strong>VideoScore2 的两阶段(SFT→GRPO)训练法印证:judge 本身也是被 RL 出来的</strong>——所以"评测 judge 与训练 RM 不同家族"不是洁癖,是防止两边被同一套偏置 RL 出来。</p>
+</div>
+
+<hr class="sep">
+
+<h2 id="metalayer"><span class="no">4</span>Meta 层:先评裁判,再信裁判 <span class="chip meta">META</span></h2>
+
+<h3>4.1 VideoRewardBench —— 视频域"评裁判"的第一份系统数据</h3>
+<dl class="spec">
+  <dt>构成</dt><dd>1,563 偏好三元组 / 1,482 条视频,四类:感知(长/短视频)、知识、推理、安全。<strong>注意:评的是视频理解类 RM</strong>,不是生成质量 RM——用它筛 judge 时看方法学与相对排序,不直接搬绝对数。</dd>
+  <dt>裁判池</dt><dd>28 个:生成式 18(GPT-4o/Claude/Gemini/Qwen/LLaVA/Aria)、判别式 2(IXC-2.5-Reward、Skywork-VL)、半标量 1(MM-RLHF-Reward)等</dd>
+</dl>
+<div class="tbl"><table>
+<tr><th>发现</th><th>数字</th><th>启示</th></tr>
+<tr><td class="k">最好也只有六成出头</td><td>Gemini-2.5-Pro <span class="num">63.6%</span> / Claude-3.7 <span class="num">63.2%</span> / GPT-4o 仅 <span class="num">57.0%</span>;开源最好 LLaVA-Critic-72B <span class="num">63.0%</span></td><td>视频裁判整体不成熟,单裁判分数别当真值用</td></tr>
+<tr><td class="k">RL 训练的裁判未必更好</td><td>fast-thinking SFT 裁判常胜过 slow-thinking RL 裁判(跨模态泛化)</td><td>选 judge 别迷信"RL 过的更强"</td></tr>
+<tr><td class="k">测试时采样有效</td><td>R1-Reward K=1→9 提升 <span class="num">+14.3%</span>;非 critic 基线约 +5%</td><td>关键判定(promote 决策)可用多次采样投票买精度</td></tr>
+<tr><td class="k">帧数敏感性分裂</td><td>critic 类吃帧数红利;判别式在低帧数下不稳定</td><td>judge 的抽帧策略要进校准变量,不能随意改</td></tr>
+</table></div>
+<p class="src">来源:arXiv 2509.00484</p>
+
+<h3>4.2 JudgeFit —— 每个 VLM 该有自己的评价维度</h3>
+<p>16 个 VLM(8 个家族)的实验:不同 VLM 对物理现象的内部表征不同,<strong>共用一套全局 rubric 等于假设所有裁判有同样的感知能力</strong>。方法:让目标 VLM 自己在样本上找物理错误并聚类成它的维度分类法 → 用人评校准逐维可靠性 → LLM 修复不可靠/冗余维度 → 迭代收敛。结果:比全局 rubric 平均好 <span class="num">~32%</span>,且暴露出"总排名看不出来的模型盲区"。<strong>对我们:L1 的 rubric 要按所选 judge 校准一轮,不能直接抄论文附录。</strong><span class="src">来源:arXiv 2606.22918</span></p>
+
+<h3>4.3 Fooling the LVLM Judges —— 攻击面清单</h3>
+<p>多模态 judge 的已证实弱点:位置偏差(A/B 顺序影响判决)、评分不稳定(同输入多次不同分)、幻觉(评不存在的内容)、与人评实质分歧。工程对策:成对判定必须<strong>双向跑(交换 A/B 位置)取一致</strong>、temperature 固定、关键闸门多数投票。<span class="src">来源:arXiv 2505.15249</span></p>
+
+<hr class="sep">
+
+<h2 id="rubric"><span class="no">5</span>Rubric 学习:把尺子本身变成可学习资产 <span class="chip rubric">RUBRIC</span></h2>
+
+<h3>5.1 AutoRubric-T2I —— 算法逐步拆解</h3>
+<div class="pipeline">Phase 0  种子规则
+  从全量偏好数据选 256 个多样 pair(Composite Scoring:代理 reward × prompt 多样性平衡)
+  → VLM 对每个 pair 做 CoT 分析,产出候选 rubric → 去重聚合成种子规则池
+
+Phase 1..R  迭代精炼(每轮四步)
+  (a) 用当前 rubric 集让 VLM 给训练 pair 打分(每条 rubric = 一个可打分特征)
+  (b) ℓ1 正则逻辑回归 → 选 top-N 规则,稀疏化(弱规则权重归零)
+  (c) hard-pair mining:找当前规则集判错的 pair
+  (d) VLM 针对这些失败 pair 提出新规则 → 入池,下一轮
+
+推理时:VLM judge 按「加权 rubric 集」逐条打分 → 加权合成 + 逐维反馈</div>
+<div class="tbl"><table>
+<tr><th>指标</th><th>数字</th><th>说明</th></tr>
+<tr><td class="k">标注效率</td><td>&lt; <span class="num">0.01%</span></td><td>相对训练 scalar RM 的偏好数据量;几百-几千对即可起步</td></tr>
+<tr><td class="k">判准</td><td>MMRB2 <span class="num">62.5%</span>(Qwen3-VL-8B,免微调,SOTA)/ Gemini-3-Flash <span class="num">71.4%</span></td><td>8B 开源 judge + 学到的 rubric ≈ 微调 RM 水平</td></tr>
+<tr><td class="k">下游 RL</td><td>SD-3.5-Medium 在 TIIF <span class="num">65.3→71.6</span></td><td>rubric 直接当 reward 用也有效</td></tr>
+<tr><td class="k">可审计性</td><td>论文 Fig.2:HPSv3 scalar 优化会加"无关人物"骗分</td><td>rubric 逐维分数能定位是哪条准则被违反——scalar RM 做不到</td></tr>
+</table></div>
+<p>同族的 <a href="https://arxiv.org/html/2605.08354v1">Auto-Rubric as Reward</a>(副标题即"从隐式偏好到显式多模态生成准则")有开源实现,可作工程起点。<span class="src">来源:arXiv 2605.17602 / 2605.08354</span></p>
+
+<h3>5.2 三个必须一起吃下的约束</h3>
+<div class="callout warn">
+<p><strong>① 审美窄化</strong>(arXiv 2512.11883):通用审美对齐会把输出推向"平均好看",无法执行差异化风格指令 → rubric 按业务线/风格分组学,不学一套通用审美。<strong>② criteria drift</strong>(UIST 2024, arXiv 2404.12272):打分过程本身在定义标准,标准不可能先验写完 → rubric 版本化 + 记录每条的来源 case。<strong>③ 学出来的 rubric 也要过 meta 层</strong>:AutoRubric 的权重拟合数据 ≠ 校准数据,留出集纪律照旧。</p>
+</div>
+
+<hr class="sep">
+
+<h2 id="compare"><span class="no">6</span>总对比表</h2>
+<div class="tbl"><table>
+<tr><th>框架</th><th>类型</th><th>评的对象</th><th>打分器内核</th><th>判定形态</th><th>人对齐验证</th><th>单位成本</th><th>我们的用途</th></tr>
+<tr><td class="k">VBench-2.0</td><td><span class="chip bench">BENCH</span></td><td>模型</td><td>专才检测器 × 9 + VLM 多问 VQA/文本对齐 × 9</td><td>逐维绝对分</td><td>逐维 Spearman(大规模标注)</td><td>中(全套重;可抽子集)</td><td>L0 物理/常识/人体子集</td></tr>
+<tr><td class="k">Video-Bench</td><td><span class="chip bench">BENCH</span></td><td>模型</td><td>GPT-4o + chain-of-query + few-shot 同批参照</td><td>批内相对分</td><td>Spearman 0.50(人际 0.52)</td><td>中高(闭源 API)</td><td>机制抄进 L1(问答链/同批参照)</td></tr>
+<tr><td class="k">VMBench</td><td><span class="chip bench">BENCH</span></td><td>模型(运动)</td><td>5 套专才栈(MAEv2/Q-Align/MMPose/GroundedSAM+CoTracker)</td><td>逐维绝对分</td><td>Spearman +35.3%,成对 70.6%</td><td>低-中(全开源可自部署)</td><td><strong>L0 运动维度主力</strong></td></tr>
+<tr><td class="k">VideoPhy-2</td><td><span class="chip bench">BENCH</span></td><td>模型(物理)</td><td>人评三轴 + AutoEval 蒸馏评估器</td><td>5 档 Likert</td><td>本身是人评数据集</td><td>人评贵 / AutoEval 便宜</td><td>hard 集 = hardmin 候选;规则标注法进 rubric</td></tr>
+<tr><td class="k">VideoReward</td><td><span class="chip judge">RM</span></td><td>样本对</td><td>VLM 回归头 scalar,182k 偏好训练</td><td>成对/逐点标量</td><td>偏好预测准确率</td><td>低(自部署)</td><td><strong>训练 reward 主力</strong> + L0 分数</td></tr>
+<tr><td class="k">VisionReward</td><td><span class="chip judge">RM</span></td><td>样本</td><td>64 二元题 + 线性加权(checklist)</td><td>逐点可解释分</td><td>超 VideoScore +17.2%</td><td>低</td><td>第二 RM;checklist 思想进 rubric</td></tr>
+<tr><td class="k">VideoScore2</td><td><span class="chip judge">JUDGE</span></td><td>样本</td><td>Qwen2.5-VL-7B,SFT→GRPO,CoT 后打分</td><td>三维分 + 理由</td><td>OOD 平均 50.37%(超同类)</td><td>低-中</td><td><strong>L1 judge 候选一号</strong>(理由喂归因)</td></tr>
+<tr><td class="k">UnifiedReward 系</td><td><span class="chip judge">JUDGE·RM</span></td><td>样本</td><td>Qwen-VL 2B-32B,成对排序+逐点,Think 版 RL-CoT</td><td>双形态</td><td>Best-of-N 增益验证</td><td>低-中(多尺寸)</td><td>L1 第二家族 / Best-of-N 选样</td></tr>
+<tr><td class="k">MJ-Bench</td><td><span class="chip meta">META</span></td><td>裁判(图像)</td><td>22+ 裁判 × 4 视角偏好对</td><td>裁判准确率</td><td>—(自身即标注)</td><td>—</td><td>选型方法论;结论外推有界</td></tr>
+<tr><td class="k">VideoRewardBench</td><td><span class="chip meta">META</span></td><td>裁判(视频理解)</td><td>1563 三元组 × 28 裁判</td><td>裁判准确率</td><td>—</td><td>—</td><td>L1 judge 初筛 + 采样/帧数策略依据</td></tr>
+<tr><td class="k">JudgeFit</td><td><span class="chip meta">META</span></td><td>裁判×维度</td><td>per-VLM 维度分类法学习 + 人评校准迭代</td><td>—</td><td>+32% vs 全局 rubric</td><td>一次性校准成本</td><td>L1 rubric 按 judge 定制的依据</td></tr>
+<tr><td class="k">AutoRubric 系</td><td><span class="chip rubric">RUBRIC</span></td><td>尺子本身</td><td>CoT 出规则 + ℓ1 稀疏加权 + hard-pair mining</td><td>加权 rubric 集</td><td>MMRB2 62.5-71.4%</td><td>极低(&lt;0.01% 标注)</td><td>L2 偏好对 → 尺子复利</td></tr>
+</table></div>
+
+<hr class="sep">
+
+<h2 id="stack"><span class="no">7</span>映射回三层栈:每个工具落在哪</h2>
+<div class="tbl"><table>
+<tr><th>层</th><th>用什么(具体到组件)</th><th>为什么是它</th></tr>
+<tr><td class="k">L0 夜跑闸门<br><span class="num">每 checkpoint</span></td><td>VMBench 五件套(运动)+ VBench-2.0 专才维度(人体异常/ID/实例保持/几何)+ VideoReward 三维分 + VideoPhy-2 AutoEval(物理回归)+ 负样本反向校验</td><td>全部可自部署、逐条便宜、有判别信号;MJ-Bench①/VBench-2.0 的实践都指向专才在这些维度更准</td></tr>
+<tr><td class="k">L1 成对评审<br><span class="num">每实验</span></td><td>VideoScore2 + UnifiedReward(不同家族互查)+ 闭源 VLM 抽查;机制:chain-of-query、同批参照、Likert 档位+理由、双向 A/B、关键判定多数投票;rubric 按 JudgeFit 思路对所选 judge 校准</td><td>开放维度需要推理(MJ-Bench②);形态设计全部有出处(Video-Bench/MJ-Bench③/Fooling)</td></tr>
+<tr><td class="k">L2 人评锚<br><span class="num">每周/里程碑</span></td><td>200-prompt 分难度集 GSB;产出三用:决策数字 / L0-L1 的 TPR-TNR 校准 / 偏好对入库 → AutoRubric 学 rubric(按业务线分组)</td><td>人际一致性 ~0.52 是所有自动 judge 的天花板参照;偏好对是唯一越攒越值钱的资产</td></tr>
+</table></div>
+
+<div class="callout">
+<p><strong>一句话版本:</strong>L0 用"专才检测器 + RM 分数"守回归,L1 用"两个家族的生成式 judge + 校准 rubric"做成对裁决,L2 用人评校准一切并顺手生产偏好对喂 rubric 学习——四类工具各归其位,任何一层单独拿出来都不可信,合在一起才是尺子。</p>
+</div>
+
+<p class="footnote" style="margin-top:40px">来源索引:MJ-Bench(mj-bench.github.io)· VBench-2.0(arXiv 2503.21755)· Video-Bench(2504.04907)· VMBench(2503.10076)· VideoPhy-2(2503.06800)· VideoScore2(2509.22799)· UnifiedReward(github.com/CodeGoat24/UnifiedReward)· VideoReward/VideoAlign(2501.13918)· VisionReward(2412.21059)· VideoRewardBench(2509.00484)· JudgeFit(2606.22918)· Fooling LVLM Judges(2505.15249)· AutoRubric-T2I(2605.17602)· Auto-Rubric as Reward(2605.08354)· 审美窄化(2512.11883)· criteria drift(2404.12272)。配套文字版见 seedance-gap 专题 08 篇。</p>
+</div>
+
+</body>
+</html>

@@ -283,7 +283,7 @@
 
 *In-house deep-dive analyses (sources cited, claims adversarially verified where marked).*
 
-- 📂 [**Seedance vs Open-Source Gap** (topic series)](research/seedance-gap/) (2026-07) - *Root-cause analysis of the Seedance-vs-open-source quality gap: post-training (multi-dim reward-model RLHF) and data curation dominate, not architecture. 7-part series (updated 2026-08): [benchmark gap](research/seedance-gap/01-benchmark-gap.md) · [Seedance recipe](research/seedance-gap/02-seedance-recipe.md) · [open-source landscape](research/seedance-gap/03-open-source-landscape.md) · [post-training methods](research/seedance-gap/04-posttraining-methods.md) · [distillation & multi-shot](research/seedance-gap/05-distillation-multishot.md) · [roadmap & feasibility](research/seedance-gap/06-roadmap-feasibility.md) · [MiniMax H3](research/seedance-gap/07-minimax-h3.md).*
+- 📂 [**Seedance vs Open-Source Gap** (topic series)](research/seedance-gap/) (2026-07) - *Root-cause analysis of the Seedance-vs-open-source quality gap: post-training (multi-dim reward-model RLHF) and data curation dominate, not architecture. 8-part series (updated 2026-08): [benchmark gap](research/seedance-gap/01-benchmark-gap.md) · [Seedance recipe](research/seedance-gap/02-seedance-recipe.md) · [open-source landscape](research/seedance-gap/03-open-source-landscape.md) · [post-training methods](research/seedance-gap/04-posttraining-methods.md) · [distillation & multi-shot](research/seedance-gap/05-distillation-multishot.md) · [roadmap & feasibility](research/seedance-gap/06-roadmap-feasibility.md) · [MiniMax H3](research/seedance-gap/07-minimax-h3.md) · [evaluation loop](research/seedance-gap/08-evaluation-loop.md).*
 
 ---
 
