@@ -1,0 +1,951 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Awesome Video AI Research — paper corpus
+#
+# This file is the single source of truth. README.md is GENERATED from it:
+#     python scripts/gen_readme.py
+# Do not hand-edit README.md; edit this file and regenerate.
+#
+# Scope: generative video (the model that makes the pixels), inference
+# efficiency, and post-training. Video understanding / Video-LLM is
+# deliberately out of scope — see the placeholder section in taxonomy.yaml.
+#
+# Fields
+#   id          stable slug, referenced by `prereq` and by external tooling
+#   title       exact paper title (verified against the arXiv API)
+#   arxiv       arXiv id, no version suffix. Omit for non-arXiv work.
+#   year        first public release
+#   section     which README section it lands in (see taxonomy.yaml)
+#   tags        free-form, used for cross-cutting views
+#   desc        one line, English, says what it contributes — not what it is
+#   prereq      ids you should read first; this is what makes the corpus a
+#               learning graph rather than a list
+#   difficulty  1 (survey-level) .. 5 (dense theory)
+#   minutes     rough first-read budget
+#   code        repository url
+#   site        project page / report url when there is no arXiv entry
+# ─────────────────────────────────────────────────────────────────────────────
+
+papers:
+
+# ── Foundations ──────────────────────────────────────────────────────────────
+- id: transformer
+  title: Attention Is All You Need
+  arxiv: "1706.03762"
+  year: 2017
+  section: foundations
+  tags: [architecture]
+  desc: The attention block every model below is built out of.
+  prereq: []
+  difficulty: 2
+  minutes: 60
+
+- id: ddpm
+  title: Denoising Diffusion Probabilistic Models
+  arxiv: "2006.11239"
+  year: 2020
+  section: foundations
+  tags: [theory, sampling]
+  desc: Makes denoising diffusion trainable with a simple noise-prediction loss.
+  prereq: []
+  difficulty: 3
+  minutes: 90
+  code: https://github.com/hojonathanho/diffusion
+
+- id: ddim
+  title: Denoising Diffusion Implicit Models
+  arxiv: "2010.02502"
+  year: 2020
+  section: foundations
+  tags: [sampling]
+  desc: Decouples sampling steps from training steps, making few-step sampling possible at all.
+  prereq: [ddpm]
+  difficulty: 3
+  minutes: 60
+
+- id: score-sde
+  title: Score-Based Generative Modeling through Stochastic Differential Equations
+  arxiv: "2011.13456"
+  year: 2020
+  section: foundations
+  tags: [theory]
+  desc: Unifies DDPM and score matching as one SDE, which is where probability-flow ODE samplers come from.
+  prereq: [ddpm]
+  difficulty: 5
+  minutes: 150
+
+- id: cfg
+  title: Classifier-Free Diffusion Guidance
+  arxiv: "2207.12598"
+  year: 2022
+  section: foundations
+  tags: [sampling, conditioning]
+  desc: Trades diversity for prompt adherence with no extra classifier — and doubles inference cost.
+  prereq: [ddpm]
+  difficulty: 2
+  minutes: 30
+
+- id: ldm
+  title: High-Resolution Image Synthesis with Latent Diffusion Models
+  arxiv: "2112.10752"
+  year: 2021
+  section: foundations
+  tags: [architecture, vae]
+  desc: Moves diffusion into a compressed latent space; every model in this list inherits the VAE-plus-denoiser split.
+  prereq: [ddpm]
+  difficulty: 3
+  minutes: 90
+  code: https://github.com/CompVis/latent-diffusion
+
+- id: flow-matching
+  title: Flow Matching for Generative Modeling
+  arxiv: "2210.02747"
+  year: 2022
+  section: foundations
+  tags: [theory, training]
+  desc: Replaces the diffusion objective with a straight-line velocity field; current video models train this way, not as DDPMs.
+  prereq: [score-sde]
+  difficulty: 4
+  minutes: 120
+
+- id: rectified-flow
+  title: "Flow Straight and Fast: Learning to Generate and Transfer Data with Rectified Flow"
+  arxiv: "2209.03003"
+  year: 2022
+  section: foundations
+  tags: [theory, distillation]
+  desc: Straightens the generative path so that fewer solver steps lose less quality — the basis of few-step distillation.
+  prereq: [flow-matching]
+  difficulty: 4
+  minutes: 120
+
+- id: edm
+  title: Elucidating the Design Space of Diffusion-Based Generative Models
+  arxiv: "2206.00364"
+  year: 2022
+  section: foundations
+  tags: [sampling, training]
+  desc: Turns sampler and noise schedule design into an explicit parameter space; the source of most sampler names in practice.
+  prereq: [score-sde]
+  difficulty: 4
+  minutes: 150
+  code: https://github.com/NVlabs/edm
+
+- id: edm2
+  title: Analyzing and Improving the Training Dynamics of Diffusion Models
+  arxiv: "2312.02696"
+  year: 2023
+  section: foundations
+  tags: [training]
+  desc: Fixes scale drift during training and introduces post-hoc EMA tuning.
+  prereq: [edm]
+  difficulty: 4
+  minutes: 120
+  code: https://github.com/NVlabs/edm2
+
+# ── Architectures ────────────────────────────────────────────────────────────
+- id: dit
+  title: Scalable Diffusion Models with Transformers
+  arxiv: "2212.09748"
+  year: 2022
+  section: architectures
+  tags: [architecture, dit]
+  desc: Replaces the U-Net with a transformer and introduces adaLN-Zero conditioning; the backbone of every model below.
+  prereq: [ldm, transformer]
+  difficulty: 3
+  minutes: 90
+  code: https://github.com/facebookresearch/DiT
+
+- id: uvit
+  title: "All are Worth Words: A ViT Backbone for Diffusion Models"
+  arxiv: "2209.12152"
+  year: 2022
+  section: architectures
+  tags: [architecture, dit]
+  desc: Concurrent transformer backbone that keeps long skip connections; useful contrast to DiT's design choices.
+  prereq: [dit]
+  difficulty: 3
+  minutes: 60
+
+- id: pixart-alpha
+  title: "PixArt-α: Fast Training of Diffusion Transformer for Photorealistic Text-to-Image Synthesis"
+  arxiv: "2310.00426"
+  year: 2023
+  section: architectures
+  tags: [architecture, training-efficiency]
+  desc: Shows a DiT can be trained to competitive quality on a small fraction of the usual compute.
+  prereq: [dit]
+  difficulty: 3
+  minutes: 60
+
+- id: sd3
+  title: Scaling Rectified Flow Transformers for High-Resolution Image Synthesis
+  arxiv: "2403.03206"
+  year: 2024
+  section: architectures
+  tags: [architecture, dit, flow]
+  desc: MMDiT — text and image tokens share one attention with separate weights; the direct ancestor of single-stream video models.
+  prereq: [dit, rectified-flow]
+  difficulty: 4
+  minutes: 120
+
+# ── Video generation ─────────────────────────────────────────────────────────
+- id: vdm
+  title: Video Diffusion Models
+  arxiv: "2204.03458"
+  year: 2022
+  section: video-gen
+  tags: [video, foundational]
+  desc: First workable video diffusion model; introduces the factorized space-time U-Net.
+  prereq: [ddpm]
+  difficulty: 3
+  minutes: 60
+
+- id: make-a-video
+  title: "Make-A-Video: Text-to-Video Generation without Text-Video Data"
+  arxiv: "2209.14792"
+  year: 2022
+  section: video-gen
+  tags: [video]
+  desc: Bootstraps video generation from an image model plus unlabeled video, sidestepping paired data scarcity.
+  prereq: [vdm]
+  difficulty: 3
+  minutes: 60
+
+- id: imagen-video
+  title: "Imagen Video: High Definition Video Generation with Diffusion Models"
+  arxiv: "2210.02303"
+  year: 2022
+  section: video-gen
+  tags: [video, cascade]
+  desc: Cascaded spatial and temporal super-resolution; the approach latent video models later replaced.
+  prereq: [vdm]
+  difficulty: 3
+  minutes: 60
+
+- id: video-ldm
+  title: Align your Latents - High-Resolution Video Synthesis with Latent Diffusion Models
+  arxiv: "2304.08818"
+  year: 2023
+  section: video-gen
+  tags: [video, vae]
+  desc: Inflates a pretrained image LDM with temporal layers — the cheapest known path from image model to video model.
+  prereq: [ldm, vdm]
+  difficulty: 3
+  minutes: 90
+
+- id: svd
+  title: "Stable Video Diffusion: Scaling Latent Video Diffusion Models to Large Datasets"
+  arxiv: "2311.15127"
+  year: 2023
+  section: video-gen
+  tags: [video, data]
+  desc: Documents the three-stage data curation pipeline in unusual detail; read it for the data recipe, not the architecture.
+  prereq: [video-ldm]
+  difficulty: 3
+  minutes: 90
+  code: https://github.com/Stability-AI/generative-models
+
+- id: walt
+  title: Photorealistic Video Generation with Diffusion Models
+  arxiv: "2312.06662"
+  year: 2023
+  section: video-gen
+  tags: [video, dit]
+  desc: W.A.L.T — window attention over a shared image-video latent space.
+  prereq: [dit, video-ldm]
+  difficulty: 4
+  minutes: 90
+
+- id: latte
+  title: "Latte: Latent Diffusion Transformer for Video Generation"
+  arxiv: "2401.03048"
+  year: 2024
+  section: video-gen
+  tags: [video, dit]
+  desc: Ablates four ways to factorize space-time attention in a video DiT; the clearest study of that trade-off.
+  prereq: [dit]
+  difficulty: 3
+  minutes: 60
+  code: https://github.com/Vchitect/Latte
+
+- id: sora
+  title: Video generation models as world simulators
+  year: 2024
+  section: video-gen
+  tags: [video, report]
+  desc: No method detail, but it established spacetime patches and native-resolution training as the default framing.
+  prereq: [dit]
+  difficulty: 1
+  minutes: 30
+  site: https://openai.com/index/video-generation-models-as-world-simulators/
+
+- id: videopoet
+  title: "VideoPoet: A Large Language Model for Zero-Shot Video Generation"
+  arxiv: "2312.14125"
+  year: 2023
+  section: video-gen
+  tags: [video, autoregressive]
+  desc: The autoregressive-token alternative to diffusion; worth reading to see what the diffusion consensus gave up.
+  prereq: [magvit-v2]
+  difficulty: 4
+  minutes: 90
+
+- id: cogvideox
+  title: "CogVideoX: Text-to-Video Diffusion Models with An Expert Transformer"
+  arxiv: "2408.06072"
+  year: 2024
+  section: video-gen
+  tags: [video, dit, open-weights]
+  desc: Open weights plus a 3D causal VAE and expert adaptive LayerNorm; the first fully reproducible modern stack.
+  prereq: [dit, sd3]
+  difficulty: 3
+  minutes: 90
+  code: https://github.com/THUDM/CogVideo
+
+- id: moviegen
+  title: "Movie Gen: A Cast of Media Foundation Models"
+  arxiv: "2410.13720"
+  year: 2024
+  section: video-gen
+  tags: [video, audio, post-training]
+  desc: 30B joint video-and-audio generation with a fully documented post-training recipe — the most complete public report of its kind.
+  prereq: [sd3, flow-matching]
+  difficulty: 4
+  minutes: 180
+
+- id: hunyuanvideo
+  title: "HunyuanVideo: A Systematic Framework For Large Video Generative Models"
+  arxiv: "2412.03603"
+  year: 2024
+  section: video-gen
+  tags: [video, open-weights, infra]
+  desc: 13B open weights with training infrastructure, data pipeline and scaling laws written down.
+  prereq: [cogvideox]
+  difficulty: 4
+  minutes: 180
+  code: https://github.com/Tencent/HunyuanVideo
+
+- id: ltx-video
+  title: "LTX-Video: Realtime Video Latent Diffusion"
+  arxiv: "2501.00103"
+  year: 2024
+  section: video-gen
+  tags: [video, open-weights, efficiency]
+  desc: Pushes VAE compression to 1:192 and folds the final denoising step into the decoder to hit real time.
+  prereq: [video-ldm]
+  difficulty: 3
+  minutes: 90
+  code: https://github.com/Lightricks/LTX-Video
+
+- id: wan
+  title: "Wan: Open and Advanced Large-Scale Video Generative Models"
+  arxiv: "2503.20314"
+  year: 2025
+  section: video-gen
+  tags: [video, open-weights]
+  desc: The open base most post-training work builds on; note the report discloses no RLHF stage.
+  prereq: [cogvideox]
+  difficulty: 3
+  minutes: 120
+  code: https://github.com/Wan-Video/Wan2.1
+
+- id: step-video-t2v
+  title: "Step-Video-T2V Technical Report: The Practice, Challenges, and Future of Video Foundation Model"
+  arxiv: "2502.10248"
+  year: 2025
+  section: video-gen
+  tags: [video, open-weights]
+  desc: 30B open model with a deep VAE and an unusually frank limitations section.
+  prereq: [hunyuanvideo]
+  difficulty: 3
+  minutes: 120
+
+- id: pyramid-flow
+  title: Pyramidal Flow Matching for Efficient Video Generative Modeling
+  arxiv: "2410.05954"
+  year: 2024
+  section: video-gen
+  tags: [video, efficiency, flow]
+  desc: Runs most denoising steps at low resolution and only the last at full — a training-time answer to inference cost.
+  prereq: [flow-matching]
+  difficulty: 4
+  minutes: 90
+
+# ── Video VAE / tokenizer ────────────────────────────────────────────────────
+- id: magvit
+  title: "MAGVIT: Masked Generative Video Transformer"
+  arxiv: "2212.05199"
+  year: 2022
+  section: video-vae
+  tags: [tokenizer, video]
+  desc: 3D tokenizer plus masked generative training; establishes video tokens as a unit of work.
+  prereq: [transformer]
+  difficulty: 4
+  minutes: 90
+
+- id: magvit-v2
+  title: Language Model Beats Diffusion - Tokenizer is Key to Visual Generation
+  arxiv: "2310.05737"
+  year: 2023
+  section: video-vae
+  tags: [tokenizer, video]
+  desc: Lookup-free quantization with a huge vocabulary; the argument that tokenizer quality dominates generator choice.
+  prereq: [magvit]
+  difficulty: 4
+  minutes: 90
+
+- id: omnitokenizer
+  title: "OmniTokenizer: A Joint Image-Video Tokenizer for Visual Generation"
+  arxiv: "2406.09399"
+  year: 2024
+  section: video-vae
+  tags: [tokenizer]
+  desc: One tokenizer trained jointly on images and video, with a progressive training schedule.
+  prereq: [magvit-v2]
+  difficulty: 3
+  minutes: 60
+
+- id: cv-vae
+  title: "CV-VAE: A Compatible Video VAE for Latent Generative Video Models"
+  arxiv: "2405.20279"
+  year: 2024
+  section: video-vae
+  tags: [tokenizer, vae]
+  desc: Builds a video VAE whose latent space stays compatible with existing image models, so pretrained weights survive.
+  prereq: [ldm]
+  difficulty: 3
+  minutes: 60
+
+# ── Efficiency · step caching ────────────────────────────────────────────────
+- id: deepcache
+  title: "DeepCache: Accelerating Diffusion Models for Free"
+  arxiv: "2312.00858"
+  year: 2023
+  section: eff-caching
+  tags: [inference, caching]
+  desc: Reuses high-level U-Net features across adjacent steps at no training cost; the origin of the caching line.
+  prereq: [ddpm]
+  difficulty: 2
+  minutes: 45
+  code: https://github.com/horseee/DeepCache
+
+- id: pab
+  title: Real-Time Video Generation with Pyramid Attention Broadcast
+  arxiv: "2408.12588"
+  year: 2024
+  section: eff-caching
+  tags: [inference, caching, video]
+  desc: Broadcasts attention outputs across steps at different rates per attention type; caching adapted to video DiTs.
+  prereq: [deepcache, latte]
+  difficulty: 3
+  minutes: 60
+  code: https://github.com/NUS-HPC-AI-Lab/VideoSys
+
+- id: delta-dit
+  title: "Δ-DiT: A Training-Free Acceleration Method Tailored for Diffusion Transformers"
+  arxiv: "2406.01125"
+  year: 2024
+  section: eff-caching
+  tags: [inference, caching, dit]
+  desc: Caches residual deltas rather than features, and shows which blocks matter at which stage of denoising.
+  prereq: [deepcache, dit]
+  difficulty: 3
+  minutes: 45
+
+- id: teacache
+  title: "Timestep Embedding Tells: It's Time to Cache for Video Diffusion Model"
+  arxiv: "2411.19108"
+  year: 2024
+  section: eff-caching
+  tags: [inference, caching, video]
+  desc: TeaCache — uses the timestep embedding to decide when a step can be skipped; currently the most deployed caching method.
+  prereq: [pab]
+  difficulty: 2
+  minutes: 45
+  code: https://github.com/ali-vilab/TeaCache
+
+- id: adacache
+  title: "Adaptive Caching for Faster Video Generation with Diffusion Transformers"
+  arxiv: "2411.02397"
+  year: 2024
+  section: eff-caching
+  tags: [inference, caching, video]
+  desc: Makes the caching schedule content-dependent instead of fixed.
+  prereq: [teacache]
+  difficulty: 3
+  minutes: 45
+
+# ── Efficiency · sparse attention ────────────────────────────────────────────
+- id: sparse-videogen
+  title: "Sparse VideoGen: Accelerating Video Diffusion Transformers with Spatial-Temporal Sparsity"
+  arxiv: "2502.01776"
+  year: 2025
+  section: eff-sparse
+  tags: [inference, attention, video]
+  desc: Identifies that video attention heads split into spatial and temporal types, and sparsifies each differently.
+  prereq: [latte, flashattention2]
+  difficulty: 4
+  minutes: 90
+
+- id: sta
+  title: "Fast Video Generation with Sliding Tile Attention"
+  arxiv: "2502.04507"
+  year: 2025
+  section: eff-sparse
+  tags: [inference, attention, video]
+  desc: Replaces full 3D attention with hardware-aligned sliding tiles, turning locality into an actual kernel speedup.
+  prereq: [flashattention2]
+  difficulty: 4
+  minutes: 90
+
+- id: radial-attention
+  title: "Radial Attention: O(n log n) Sparse Attention with Energy Decay for Long Video Generation"
+  arxiv: "2506.19852"
+  year: 2025
+  section: eff-sparse
+  tags: [inference, attention, long-video]
+  desc: Exploits how attention energy decays with spatio-temporal distance to get sub-quadratic cost on long clips.
+  prereq: [sta]
+  difficulty: 4
+  minutes: 90
+
+# ── Efficiency · kernels & parallelism ───────────────────────────────────────
+- id: flashattention
+  title: "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness"
+  arxiv: "2205.14135"
+  year: 2022
+  section: eff-systems
+  tags: [kernel, attention]
+  desc: Never materializes the attention matrix; the reason long sequences are feasible at all.
+  prereq: [transformer]
+  difficulty: 4
+  minutes: 90
+
+- id: flashattention2
+  title: "FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning"
+  arxiv: "2307.08691"
+  year: 2023
+  section: eff-systems
+  tags: [kernel, attention]
+  desc: Rebalances work across warps and thread blocks for roughly 2x over the original.
+  prereq: [flashattention]
+  difficulty: 4
+  minutes: 60
+
+- id: flashattention3
+  title: "FlashAttention-3: Fast and Accurate Attention with Asynchrony and Low-precision"
+  arxiv: "2407.08608"
+  year: 2024
+  section: eff-systems
+  tags: [kernel, attention]
+  desc: Uses Hopper asynchrony and FP8; the current ceiling for exact attention.
+  prereq: [flashattention2]
+  difficulty: 5
+  minutes: 90
+
+- id: sageattention
+  title: "SageAttention: Accurate 8-Bit Attention for Plug-and-play Inference Acceleration"
+  arxiv: "2410.02367"
+  year: 2024
+  section: eff-systems
+  tags: [kernel, attention, quantization]
+  desc: INT8 attention that is accurate enough to drop in without retraining.
+  prereq: [flashattention2]
+  difficulty: 4
+  minutes: 60
+  code: https://github.com/thu-ml/SageAttention
+
+- id: sageattention2
+  title: "SageAttention2: Efficient Attention with Thorough Outlier Smoothing and Per-thread INT4 Quantization"
+  arxiv: "2411.10958"
+  year: 2024
+  section: eff-systems
+  tags: [kernel, attention, quantization]
+  desc: Pushes attention quantization to INT4 with per-thread outlier handling.
+  prereq: [sageattention]
+  difficulty: 5
+  minutes: 60
+
+- id: ring-attention
+  title: Ring Attention with Blockwise Transformers for Near-Infinite Context
+  arxiv: "2310.01889"
+  year: 2023
+  section: eff-systems
+  tags: [parallelism, attention]
+  desc: Shards the sequence across devices and rotates KV blocks in a ring; the basis of sequence parallelism.
+  prereq: [flashattention]
+  difficulty: 4
+  minutes: 90
+
+- id: ulysses
+  title: "DeepSpeed Ulysses: System Optimizations for Enabling Training of Extreme Long Sequence Transformer Models"
+  arxiv: "2309.14509"
+  year: 2023
+  section: eff-systems
+  tags: [parallelism]
+  desc: All-to-all sequence parallelism that shards by head instead of by block; complementary to Ring.
+  prereq: [transformer]
+  difficulty: 4
+  minutes: 60
+
+- id: xdit
+  title: "xDiT: an Inference Engine for Diffusion Transformers (DiTs) with Massive Parallelism"
+  arxiv: "2411.01738"
+  year: 2024
+  section: eff-systems
+  tags: [parallelism, inference, dit]
+  desc: Combines sequence, pipeline and CFG parallelism for multi-GPU DiT inference; the practical entry point.
+  prereq: [ring-attention, ulysses]
+  difficulty: 3
+  minutes: 60
+  code: https://github.com/xdit-project/xDiT
+
+- id: distrifusion
+  title: "DistriFusion: Distributed Parallel Inference for High-Resolution Diffusion Models"
+  arxiv: "2402.19481"
+  year: 2024
+  section: eff-systems
+  tags: [parallelism, inference]
+  desc: Hides communication behind computation by reusing the previous step's activations at patch boundaries.
+  prereq: [ldm]
+  difficulty: 4
+  minutes: 60
+
+# ── Efficiency · few-step distillation ───────────────────────────────────────
+- id: progressive-distillation
+  title: Progressive Distillation for Fast Sampling of Diffusion Models
+  arxiv: "2202.00512"
+  year: 2022
+  section: eff-distill
+  tags: [distillation, sampling]
+  desc: Repeatedly halves the step count by distilling a teacher into a student; the first practical few-step method.
+  prereq: [ddim]
+  difficulty: 3
+  minutes: 60
+
+- id: consistency-models
+  title: Consistency Models
+  arxiv: "2303.01469"
+  year: 2023
+  section: eff-distill
+  tags: [distillation, sampling]
+  desc: Trains a model whose output is constant along a probability-flow trajectory, enabling one-step sampling.
+  prereq: [score-sde]
+  difficulty: 4
+  minutes: 120
+
+- id: lcm
+  title: "Latent Consistency Models: Synthesizing High-Resolution Images with Few-Step Inference"
+  arxiv: "2310.04378"
+  year: 2023
+  section: eff-distill
+  tags: [distillation]
+  desc: Brings consistency distillation to latent space, where it became usable in production.
+  prereq: [consistency-models, ldm]
+  difficulty: 3
+  minutes: 60
+
+- id: add
+  title: Adversarial Diffusion Distillation
+  arxiv: "2311.17042"
+  year: 2023
+  section: eff-distill
+  tags: [distillation, gan]
+  desc: SDXL-Turbo — adds an adversarial loss so one-step output stops looking blurry.
+  prereq: [progressive-distillation]
+  difficulty: 3
+  minutes: 60
+
+- id: dmd
+  title: One-step Diffusion with Distribution Matching Distillation
+  arxiv: "2311.18828"
+  year: 2023
+  section: eff-distill
+  tags: [distillation]
+  desc: Matches distributions rather than trajectories, which is why it degrades less than trajectory distillation.
+  prereq: [consistency-models]
+  difficulty: 4
+  minutes: 90
+
+- id: dmd2
+  title: Improved Distribution Matching Distillation for Fast Image Synthesis
+  arxiv: "2405.14867"
+  year: 2024
+  section: eff-distill
+  tags: [distillation]
+  desc: Drops the regression loss and adds a GAN term; the strongest general-purpose few-step recipe.
+  prereq: [dmd]
+  difficulty: 4
+  minutes: 90
+  code: https://github.com/tianweiy/DMD2
+
+- id: causvid
+  title: From Slow Bidirectional to Fast Autoregressive Video Diffusion Models
+  arxiv: "2412.07772"
+  year: 2024
+  section: eff-distill
+  tags: [distillation, video, streaming]
+  desc: CausVid — distills a bidirectional video model into a causal one so frames can stream out.
+  prereq: [dmd2]
+  difficulty: 4
+  minutes: 90
+
+- id: self-forcing
+  title: "Self Forcing: Bridging the Train-Test Gap in Autoregressive Video Diffusion"
+  arxiv: "2506.08009"
+  year: 2025
+  section: eff-distill
+  tags: [distillation, video, streaming]
+  desc: Trains on self-generated rollouts to kill exposure bias; real-time single-GPU video at modest distillation cost.
+  prereq: [causvid]
+  difficulty: 4
+  minutes: 90
+
+- id: apt
+  title: Diffusion Adversarial Post-Training for One-Step Video Generation
+  arxiv: "2501.08316"
+  year: 2025
+  section: eff-distill
+  tags: [distillation, video, gan]
+  desc: Adversarial post-training that reaches one-step 1280x720 video generation.
+  prereq: [add]
+  difficulty: 4
+  minutes: 90
+
+# ── Quantization & memory ────────────────────────────────────────────────────
+- id: smoothquant
+  title: "SmoothQuant: Accurate and Efficient Post-Training Quantization for Large Language Models"
+  arxiv: "2211.10438"
+  year: 2022
+  section: quantization
+  tags: [quantization]
+  desc: Migrates activation outliers into the weights so both sides become quantizable.
+  prereq: []
+  difficulty: 3
+  minutes: 60
+
+- id: gptq
+  title: "GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers"
+  arxiv: "2210.17323"
+  year: 2022
+  section: quantization
+  tags: [quantization]
+  desc: Second-order weight rounding that made 4-bit weights respectable.
+  prereq: []
+  difficulty: 4
+  minutes: 60
+
+- id: awq
+  title: "AWQ: Activation-aware Weight Quantization for LLM Compression and Acceleration"
+  arxiv: "2306.00978"
+  year: 2023
+  section: quantization
+  tags: [quantization]
+  desc: Protects the small fraction of salient weights identified by activation magnitude; the scheme behind most 4-bit text encoders.
+  prereq: [smoothquant]
+  difficulty: 3
+  minutes: 60
+
+- id: q-diffusion
+  title: "Q-Diffusion: Quantizing Diffusion Models"
+  arxiv: "2302.04304"
+  year: 2023
+  section: quantization
+  tags: [quantization, diffusion]
+  desc: Shows why per-timestep activation ranges break naive PTQ on diffusion models.
+  prereq: [ddpm]
+  difficulty: 3
+  minutes: 60
+
+- id: svdquant
+  title: "SVDQuant: Absorbing Outliers by Low-Rank Components for 4-Bit Diffusion Models"
+  arxiv: "2411.05007"
+  year: 2024
+  section: quantization
+  tags: [quantization, diffusion, inference]
+  desc: Routes outliers into a low-rank branch so the main path can be 4-bit; the current best quality-per-byte for diffusion.
+  prereq: [awq, q-diffusion]
+  difficulty: 4
+  minutes: 90
+  code: https://github.com/mit-han-lab/nunchaku
+
+- id: vidit-q
+  title: "ViDiT-Q: Efficient and Accurate Quantization of Diffusion Transformers for Image and Video Generation"
+  arxiv: "2406.02540"
+  year: 2024
+  section: quantization
+  tags: [quantization, video, dit]
+  desc: Quantization tailored to video DiTs, where error accumulates across both steps and frames.
+  prereq: [q-diffusion, dit]
+  difficulty: 4
+  minutes: 60
+
+# ── Post-training & alignment ────────────────────────────────────────────────
+- id: dpo
+  title: "Direct Preference Optimization: Your Language Model is Secretly a Reward Model"
+  arxiv: "2305.18290"
+  year: 2023
+  section: post-training
+  tags: [alignment, rl]
+  desc: Removes the separate reward model and RL loop from preference training; read before any diffusion-DPO variant.
+  prereq: []
+  difficulty: 3
+  minutes: 90
+
+- id: ddpo
+  title: Training Diffusion Models with Reinforcement Learning
+  arxiv: "2305.13301"
+  year: 2023
+  section: post-training
+  tags: [alignment, rl]
+  desc: Frames denoising as a multi-step MDP so policy gradient applies directly.
+  prereq: [ddpm]
+  difficulty: 4
+  minutes: 90
+
+- id: diffusion-dpo
+  title: Diffusion Model Alignment Using Direct Preference Optimization
+  arxiv: "2311.12908"
+  year: 2023
+  section: post-training
+  tags: [alignment]
+  desc: Ports DPO to diffusion; the cheapest preference-alignment method that reliably works.
+  prereq: [dpo]
+  difficulty: 3
+  minutes: 60
+
+- id: vader
+  title: Video Diffusion Alignment via Reward Gradients
+  arxiv: "2407.08737"
+  year: 2024
+  section: post-training
+  tags: [alignment, video]
+  desc: Backpropagates reward gradients through the sampler; far more sample-efficient than policy gradient when the reward is differentiable.
+  prereq: [ddpo]
+  difficulty: 4
+  minutes: 90
+
+- id: videoreward
+  title: Improving Video Generation with Human Feedback
+  arxiv: "2501.13918"
+  year: 2025
+  section: post-training
+  tags: [alignment, video, reward-model]
+  desc: VideoAlign — 182K preference triplets and a multi-dimensional reward model separating visual, motion and alignment quality.
+  prereq: [diffusion-dpo]
+  difficulty: 3
+  minutes: 90
+  code: https://github.com/KwaiVGI/VideoAlign
+
+- id: visionreward
+  title: "VisionReward: Fine-Grained Multi-Dimensional Human Preference Learning for Image and Video Generation"
+  arxiv: "2412.21059"
+  year: 2024
+  section: post-training
+  tags: [alignment, reward-model]
+  desc: An interpretable checklist reward model instead of a scalar score, which makes reward hacking visible.
+  prereq: [videoreward]
+  difficulty: 3
+  minutes: 60
+
+- id: videodpo
+  title: "VideoDPO: Omni-Preference Alignment for Video Diffusion Generation"
+  arxiv: "2412.14167"
+  year: 2024
+  section: post-training
+  tags: [alignment, video]
+  desc: Builds the preference pairs automatically from the model's own samples, removing the human-labeling bottleneck.
+  prereq: [diffusion-dpo]
+  difficulty: 3
+  minutes: 60
+
+- id: flow-grpo
+  title: "Flow-GRPO: Training Flow Matching Models via Online RL"
+  arxiv: "2505.05470"
+  year: 2025
+  section: post-training
+  tags: [alignment, rl, flow]
+  desc: Converts the flow ODE to an SDE so online RL has the stochasticity it needs.
+  prereq: [flow-matching, ddpo]
+  difficulty: 4
+  minutes: 90
+
+- id: dancegrpo
+  title: "DanceGRPO: Unleashing GRPO on Visual Generation"
+  arxiv: "2505.07818"
+  year: 2025
+  section: post-training
+  tags: [alignment, rl, video]
+  desc: The strongest published evidence that online RL moves open video models a long way on motion quality.
+  prereq: [flow-grpo]
+  difficulty: 4
+  minutes: 90
+
+# ── Long video & multi-shot ──────────────────────────────────────────────────
+- id: lct
+  title: Long Context Tuning for Video Generation
+  arxiv: "2503.10589"
+  year: 2025
+  section: long-video
+  tags: [long-video, multi-shot]
+  desc: Extends a single-shot model to scene-level multi-shot with no added parameters.
+  prereq: [wan]
+  difficulty: 3
+  minutes: 60
+
+- id: framepack
+  title: Frame Context Packing and Drift Prevention in Next-Frame-Prediction Video Diffusion Models
+  arxiv: "2504.12626"
+  year: 2025
+  section: long-video
+  tags: [long-video, memory]
+  desc: FramePack — compresses context frames by importance so length stops driving memory.
+  prereq: [causvid]
+  difficulty: 3
+  minutes: 60
+
+- id: streamingt2v
+  title: "StreamingT2V: Consistent, Dynamic, and Extendable Long Video Generation from Text"
+  arxiv: "2403.14773"
+  year: 2024
+  section: long-video
+  tags: [long-video]
+  desc: Short-term and long-term memory modules that keep identity stable across autoregressive extension.
+  prereq: [video-ldm]
+  difficulty: 3
+  minutes: 60
+
+# ── Evaluation ───────────────────────────────────────────────────────────────
+- id: vbench
+  title: "VBench: Comprehensive Benchmark Suite for Video Generative Models"
+  arxiv: "2311.17982"
+  year: 2023
+  section: evaluation
+  tags: [benchmark]
+  desc: Decomposes video quality into 16 measurable dimensions; the default automatic benchmark, with known blind spots.
+  prereq: []
+  difficulty: 2
+  minutes: 60
+  code: https://github.com/Vchitect/VBench
+
+- id: evalcrafter
+  title: "EvalCrafter: Benchmarking and Evaluating Large Video Generation Models"
+  arxiv: "2310.11440"
+  year: 2023
+  section: evaluation
+  tags: [benchmark]
+  desc: 17 objective metrics calibrated against human opinion, with the calibration gap reported honestly.
+  prereq: []
+  difficulty: 2
+  minutes: 45
+
+- id: t2v-compbench
+  title: "T2V-CompBench: A Comprehensive Benchmark for Compositional Text-to-video Generation"
+  arxiv: "2407.14505"
+  year: 2024
+  section: evaluation
+  tags: [benchmark]
+  desc: Targets compositionality — attribute binding, spatial relations, numeracy — where general benchmarks saturate.
+  prereq: [vbench]
+  difficulty: 2
+  minutes: 45

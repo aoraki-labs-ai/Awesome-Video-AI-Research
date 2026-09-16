@@ -4,286 +4,305 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
-> A curated list of Video AI resources, architectures, models, and datasets.
-> From Generative Video (Sora-level) to Video Understanding (Video-LLMs)
+> A curated, dependency-ordered reading path for **generative video** — the models
+> that make the pixels, the techniques that make them run, and the post-training
+> that makes them good.
+
+**What makes this list different:** every entry says *what it contributes*, not what
+it is, and carries an explicit `prereq` list. The corpus is therefore a directed graph,
+not a pile of links — you can start anywhere and walk backwards to the things you are
+missing.
+
+**Scope.** Generative video, inference efficiency, and post-training. Video
+understanding and Video-LLMs are deliberately out of scope; see
+[Adjacent Areas](#adjacent-areas) for where to go instead.
+
+> [!NOTE]
+> `README.md` is **generated** from [`data/papers.yaml`](data/papers.yaml) and
+> [`data/taxonomy.yaml`](data/taxonomy.yaml) by [`scripts/gen_readme.py`](scripts/gen_readme.py).
+> Edit the data, not this file. Every arXiv id below is checked against the arXiv API
+> by `scripts/verify.py` — titles are the official ones.
+
+**81 papers** across 12 sections · every arXiv id verified against the arXiv API · `prereq` edges make this a graph, not a list
 
 ---
 
-## Table of Contents
+## Contents
 
-- [Basics](#basics)
-  - [Mathematical Foundations](#mathematical-foundations)
-  - [Key Surveys](#key-surveys)
+- [Foundations](#foundations)
+  - [Diffusion, Flow and Sampling](#diffusion-flow-and-sampling)
 - [Core Architectures](#core-architectures)
-  - [Diffusion Transformer (DiT)](#diffusion-transformer-dit)
-  - [U-Net Based Diffusion](#u-net-based-diffusion)
-  - [Autoregressive Models](#autoregressive-models)
-- [Generative Projects](#generative-projects)
-  - [Text-to-Video (T2V)](#text-to-video-t2v)
-  - [Image-to-Video (I2V)](#image-to-video-i2v)
-  - [Video Editing & Inpainting](#video-editing--inpainting)
-  - [Human Motion & Avatar](#human-motion--avatar)
-- [Video Understanding](#video-understanding)
-  - [Video-LLMs](#video-llms)
-  - [Foundation Models](#foundation-models)
-- [Infrastructure & Engineering](#infrastructure--engineering)
-  - [Inference Optimization](#inference-optimization)
-  - [Serving Frameworks](#serving-frameworks)
-- [Advanced Topics](#advanced-topics)
-  - [Post-Training & Alignment (RLHF)](#post-training--alignment-rlhf)
-  - [Few-Step Distillation & Real-Time Generation](#few-step-distillation--real-time-generation)
-  - [Temporal Consistency](#temporal-consistency)
-  - [Long Video & Multi-Shot Generation](#long-video--multi-shot-generation)
-  - [4D Generation (3D + Time)](#4d-generation-3d--time)
+  - [Diffusion Transformers](#diffusion-transformers)
+- [Video Generation](#video-generation)
+  - [Models and Technical Reports](#models-and-technical-reports)
+  - [Video VAE and Tokenizers](#video-vae-and-tokenizers)
+- [Inference Efficiency](#inference-efficiency)
+  - [Step Caching](#step-caching)
+  - [Sparse and Structured Attention](#sparse-and-structured-attention)
+  - [Kernels and Parallelism](#kernels-and-parallelism)
+  - [Few-Step Distillation](#few-step-distillation)
+  - [Quantization and Memory](#quantization-and-memory)
+- [Post-Training](#post-training)
+  - [Reward Models and Preference Optimization](#reward-models-and-preference-optimization)
+- [Long Video and Evaluation](#long-video-and-evaluation)
+  - [Long Video and Multi-Shot](#long-video-and-multi-shot)
+  - [Evaluation](#evaluation)
+- [Adjacent Areas](#adjacent-areas)
 - [Research Notes](#research-notes)
 - [Resources](#resources)
-  - [Datasets](#datasets)
-  - [Benchmarks](#benchmarks)
-  - [Tools & Libraries](#tools--libraries)
-- [Labs & Companies](#labs--companies)
+- [Labs & Companies](#labs-companies)
 - [Contributing](#contributing)
 
 ---
 
-## Basics
+<a id="foundations"></a>
 
-📚 **Essential reading before diving into video AI.**
+## Foundations
 
-- 📖 [Attention Is All You Need](https://arxiv.org/abs/1706.03762) - *The Transformer architecture that underlies most modern video AI.*
-- 🎥 [How Sora Works (Technical Report)](https://openai.com/index/video-generation-models-as-world-simulators/) - *OpenAI's technical explanation of Sora.*
-- 📝 [Diffusion Models: A Comprehensive Survey](https://arxiv.org/abs/2209.00796) - *Foundational understanding of diffusion.*
+The minimum you need before any video paper makes sense. Read in listed order —
+each entry's `prereq` in `data/papers.yaml` encodes the dependency.
 
-### Mathematical Foundations
+### Diffusion, Flow and Sampling
 
-*Core mathematical concepts powering video generation - probability, flow, and score matching.*
+*Modern video models train with flow matching, not the DDPM objective. Skipping this section is the single most common reason later papers stop parsing.*
 
-| Topic | Paper | Description |
-| :--- | :--- | :--- |
-| **DDPM** | [Denoising Diffusion Probabilistic Models](https://arxiv.org/abs/2006.11239) | The foundational diffusion paper |
-| **Score SDE** | [Score-Based Generative Modeling through SDEs](https://arxiv.org/abs/2011.13456) | Unified framework via stochastic differential equations |
-| **Flow Matching** | [Flow Matching for Generative Modeling](https://arxiv.org/abs/2210.02747) | Simulation-free training for continuous normalizing flows |
-| **Rectified Flow** | [Flow Straight and Fast](https://arxiv.org/abs/2209.03003) | Straightening flows for faster sampling |
-
-### Key Surveys
-
-- 📊 [A Survey on Video Diffusion Models](https://arxiv.org/abs/2310.10647) (2023) - *Comprehensive overview of video diffusion.*
-- 📊 [Video Understanding with Large Language Models: A Survey](https://arxiv.org/abs/2312.17432) (2024) - *State-of-the-art in Video-LLMs.*
-- 📊 [Sora: A Review on Background, Technology, Limitations, and Opportunities](https://arxiv.org/abs/2402.17177) (2024) - *Deep dive into Sora and its implications.*
+| Paper | Year | What it contributes | Prereq · Difficulty · Time | Code |
+| :--- | :---: | :--- | :--- | :---: |
+| **[Attention Is All You Need](https://arxiv.org/abs/1706.03762)** | 2017 | The attention block every model below is built out of. | ●●○○○ · 60min | — |
+| **[Denoising Diffusion Implicit Models](https://arxiv.org/abs/2010.02502)** | 2020 | Decouples sampling steps from training steps, making few-step sampling possible at all. | after `ddpm` · ●●●○○ · 60min | — |
+| **[Denoising Diffusion Probabilistic Models](https://arxiv.org/abs/2006.11239)** | 2020 | Makes denoising diffusion trainable with a simple noise-prediction loss. | ●●●○○ · 90min | [repo](https://github.com/hojonathanho/diffusion) |
+| **[Score-Based Generative Modeling through Stochastic Differential Equations](https://arxiv.org/abs/2011.13456)** | 2020 | Unifies DDPM and score matching as one SDE, which is where probability-flow ODE samplers come from. | after `ddpm` · ●●●●● · 150min | — |
+| **[High-Resolution Image Synthesis with Latent Diffusion Models](https://arxiv.org/abs/2112.10752)** | 2021 | Moves diffusion into a compressed latent space; every model in this list inherits the VAE-plus-denoiser split. | after `ddpm` · ●●●○○ · 90min | [repo](https://github.com/CompVis/latent-diffusion) |
+| **[Classifier-Free Diffusion Guidance](https://arxiv.org/abs/2207.12598)** | 2022 | Trades diversity for prompt adherence with no extra classifier — and doubles inference cost. | after `ddpm` · ●●○○○ · 30min | — |
+| **[Elucidating the Design Space of Diffusion-Based Generative Models](https://arxiv.org/abs/2206.00364)** | 2022 | Turns sampler and noise schedule design into an explicit parameter space; the source of most sampler names in practice. | after `score-sde` · ●●●●○ · 150min | [repo](https://github.com/NVlabs/edm) |
+| **[Flow Matching for Generative Modeling](https://arxiv.org/abs/2210.02747)** | 2022 | Replaces the diffusion objective with a straight-line velocity field; current video models train this way, not as DDPMs. | after `score-sde` · ●●●●○ · 120min | — |
+| **[Flow Straight and Fast: Learning to Generate and Transfer Data with Rectified Flow](https://arxiv.org/abs/2209.03003)** | 2022 | Straightens the generative path so that fewer solver steps lose less quality — the basis of few-step distillation. | after `flow-matching` · ●●●●○ · 120min | — |
+| **[Analyzing and Improving the Training Dynamics of Diffusion Models](https://arxiv.org/abs/2312.02696)** | 2023 | Fixes scale drift during training and introduces post-hoc EMA tuning. | after `edm` · ●●●●○ · 120min | [repo](https://github.com/NVlabs/edm2) |
 
 ---
+
+<a id="core-architectures"></a>
 
 ## Core Architectures
 
-### Diffusion Transformer (DiT)
+How the denoiser is built. Everything current descends from DiT plus a joint
+multimodal attention scheme.
 
-*The architecture behind Sora. Scaling Transformers to visual generation.*
+### Diffusion Transformers
 
-| Name | Paper | Code | Notes |
-| :--- | :--- | :--- | :--- |
-| **DiT** | [Scalable Diffusion Models with Transformers](https://arxiv.org/abs/2212.09748) | [GitHub](https://github.com/facebookresearch/DiT) | The foundational DiT paper |
-| **Latte** | [Latent Diffusion Transformer for Video](https://arxiv.org/abs/2401.03048) | [GitHub](https://github.com/Vchitect/Latte) | First open-source video DiT |
-| **Open-Sora** | [Democratizing Efficient Video Production](https://arxiv.org/abs/2403.06394) | [GitHub](https://github.com/hpcaitech/Open-Sora) | Open reproduction of Sora |
-| **Open-Sora-Plan** | [Open-Sora Plan](https://github.com/PKU-YuanGroup/Open-Sora-Plan) | [GitHub](https://github.com/PKU-YuanGroup/Open-Sora-Plan) | Alternative open-source Sora |
-| **LTX 2.0** | [LTX-2 Model](https://ltx.io/model) | [GitHub](https://github.com/Lightricks/LTX-2) | 19B DiT with audio-video sync |
+*The backbone. adaLN-Zero conditioning and MMDiT-style joint attention are the two ideas that carry into video.*
 
-### U-Net Based Diffusion
-
-*The classic architecture evolved from Stable Diffusion to video domain.*
-
-| Name | Paper | Code | Notes |
-| :--- | :--- | :--- | :--- |
-| **SVD** | [Stable Video Diffusion](https://arxiv.org/abs/2311.15127) | [GitHub](https://github.com/Stability-AI/generative-models) | Industry-standard I2V model |
-| **Video LDM** | [Align your Latents](https://arxiv.org/abs/2304.08818) | - | Temporal layers for video |
-| **AnimateDiff** | [Animate Your Personalized T2I Models](https://arxiv.org/abs/2307.04725) | [GitHub](https://github.com/guoyww/AnimateDiff) | Motion modules for any SD model |
-| **ModelScope** | [Text-to-Video Synthesis](https://arxiv.org/abs/2308.06571) | [GitHub](https://github.com/modelscope/modelscope) | Early open-source T2V |
-
-### Autoregressive Models
-
-*Treating video generation as a next-token prediction task (LLM-style).*
-
-| Name | Paper/Link | Code | Notes |
-| :--- | :--- | :--- | :--- |
-| **VideoPoet** | [Google Research](https://sites.research.google/videopoet/) | - | Multimodal LLM for zero-shot video |
-| **W.A.L.T** | [Walt Video Diffusion](https://walt-video-diffusion.github.io/) | - | Window attention latent transformer |
-| **Emu3** | [Next-Token Prediction is All You Need](https://arxiv.org/abs/2409.18869) | [GitHub](https://github.com/baaivision/Emu3) | Unified multimodal generation |
-| **MAGVIT-2** | [Language Model Beats Diffusion](https://arxiv.org/abs/2310.05737) | - | Tokenizer for visual generation |
+| Paper | Year | What it contributes | Prereq · Difficulty · Time | Code |
+| :--- | :---: | :--- | :--- | :---: |
+| **[Scalable Diffusion Models with Transformers](https://arxiv.org/abs/2212.09748)** | 2022 | Replaces the U-Net with a transformer and introduces adaLN-Zero conditioning; the backbone of every model below. | after `ldm`, `transformer` · ●●●○○ · 90min | [repo](https://github.com/facebookresearch/DiT) |
+| **[All are Worth Words: A ViT Backbone for Diffusion Models](https://arxiv.org/abs/2209.12152)** | 2022 | Concurrent transformer backbone that keeps long skip connections; useful contrast to DiT's design choices. | after `dit` · ●●●○○ · 60min | — |
+| **[PixArt-α: Fast Training of Diffusion Transformer for Photorealistic Text-to-Image Synthesis](https://arxiv.org/abs/2310.00426)** | 2023 | Shows a DiT can be trained to competitive quality on a small fraction of the usual compute. | after `dit` · ●●●○○ · 60min | — |
+| **[Scaling Rectified Flow Transformers for High-Resolution Image Synthesis](https://arxiv.org/abs/2403.03206)** | 2024 | MMDiT — text and image tokens share one attention with separate weights; the direct ancestor of single-stream video models. | after `dit`, `rectified-flow` · ●●●●○ · 120min | — |
 
 ---
 
-## Generative Projects
+<a id="video-generation"></a>
 
-### Text-to-Video (T2V)
+## Video Generation
 
-| Name | Organization | Type | Link | Notes |
-| :--- | :--- | :--- | :--- | :--- |
-| **Sora** | OpenAI | Proprietary | [Link](https://openai.com/sora) | SOTA, DiT-based, up to 1 min |
-| **Veo 2** | Google | Proprietary | [Link](https://deepmind.google/technologies/veo/) | 4K resolution, 2+ min |
-| **Gen-3 Alpha** | Runway | Proprietary | [Link](https://runwayml.com/) | Commercial T2V leader |
-| **Pika** | Pika Labs | Proprietary | [Link](https://pika.art/) | Fast iteration, good motion |
-| **Kling** | Kuaishou | Proprietary | [Link](https://klingai.com/) | Strong Chinese T2V model |
-| **Seedance** | ByteDance | Proprietary | [1.0 Report](https://arxiv.org/abs/2506.09113) / [1.5 pro Report](https://arxiv.org/abs/2512.13507) | #1 on Artificial Analysis T2V/I2V arenas; native multi-shot, AV joint gen (1.5+) |
-| **Lumiere** | Google | Research | [Paper](https://lumiere-video.github.io/) | Space-time diffusion |
-| **CogVideoX** | Zhipu AI | Open Source | [GitHub](https://github.com/THUDM/CogVideo) | GLM-based, 6B & 5B models |
-| **Mochi 1** | Genmo | Open Source | [GitHub](https://github.com/genmoai/mochi) | High quality open T2V |
-| **HunyuanVideo** | Tencent | Open Source | [GitHub](https://github.com/Tencent/HunyuanVideo) | 13B DiT model |
-| **LTX 2.0** | Lightricks | Open Source | [GitHub](https://github.com/Lightricks/LTX-2) | 19B DiT, 4K+audio, up to 20s |
-| **Wan 2.2** | Alibaba | Open Source | [GitHub](https://github.com/Wan-Video/Wan2.2) | MoE DiT (27B/14B active), Apache 2.0; strongest open-weights base |
-| **Wan 2.6** | Alibaba | Proprietary (API) | [Link](https://wan.video/) | 1080p, 15s, multi-shot+audio; weights not released |
-| **HunyuanVideo 1.5** | Tencent | Open Source | [GitHub](https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5) | 8.3B DiT; full open post-training recipe (SFT+DPO+MixGRPO) |
-| **MiniMax H3** | MiniMax | Open Weights | [HuggingFace](https://huggingface.co/MiniMaxAI/MiniMax-H3) | 33B omni-modal, 2K/15s/native stereo; #1 open-weights on AA arena (community license, restrictions apply) |
+The models themselves, oldest first. For recent ones the technical report is
+usually worth more than the architecture diagram — read them for data pipelines,
+training infrastructure and post-training recipes.
 
-### Image-to-Video (I2V)
+### Models and Technical Reports
 
-| Name | Organization | Code | Notes |
-| :--- | :--- | :--- | :--- |
-| **SVD / SVD-XT** | Stability AI | [GitHub](https://github.com/Stability-AI/generative-models) | Industry standard |
-| **DynamiCrafter** | CUHK | [GitHub](https://github.com/Doubiiu/DynamiCrafter) | Open-domain image animation |
-| **I2VGen-XL** | Alibaba | [GitHub](https://github.com/ali-vilab/i2vgen-xl) | High-resolution I2V |
-| **Animate Anyone** | Alibaba | [GitHub](https://github.com/HumanAIGC/AnimateAnyone) | Character animation from image |
-| **LivePortrait** | Kuaishou | [GitHub](https://github.com/KwaiVGI/LivePortrait) | Portrait animation |
+*Where the field actually is. Open-weight entries are marked in the notes.*
 
-### Video Editing & Inpainting
+| Paper | Year | What it contributes | Prereq · Difficulty · Time | Code |
+| :--- | :---: | :--- | :--- | :---: |
+| **[Imagen Video: High Definition Video Generation with Diffusion Models](https://arxiv.org/abs/2210.02303)** | 2022 | Cascaded spatial and temporal super-resolution; the approach latent video models later replaced. | after `vdm` · ●●●○○ · 60min | — |
+| **[Make-A-Video: Text-to-Video Generation without Text-Video Data](https://arxiv.org/abs/2209.14792)** | 2022 | Bootstraps video generation from an image model plus unlabeled video, sidestepping paired data scarcity. | after `vdm` · ●●●○○ · 60min | — |
+| **[Video Diffusion Models](https://arxiv.org/abs/2204.03458)** | 2022 | First workable video diffusion model; introduces the factorized space-time U-Net. | after `ddpm` · ●●●○○ · 60min | — |
+| **[Stable Video Diffusion: Scaling Latent Video Diffusion Models to Large Datasets](https://arxiv.org/abs/2311.15127)** | 2023 | Documents the three-stage data curation pipeline in unusual detail; read it for the data recipe, not the architecture. | after `video-ldm` · ●●●○○ · 90min | [repo](https://github.com/Stability-AI/generative-models) |
+| **[Align your Latents - High-Resolution Video Synthesis with Latent Diffusion Models](https://arxiv.org/abs/2304.08818)** | 2023 | Inflates a pretrained image LDM with temporal layers — the cheapest known path from image model to video model. | after `ldm`, `vdm` · ●●●○○ · 90min | — |
+| **[VideoPoet: A Large Language Model for Zero-Shot Video Generation](https://arxiv.org/abs/2312.14125)** | 2023 | The autoregressive-token alternative to diffusion; worth reading to see what the diffusion consensus gave up. | after `magvit-v2` · ●●●●○ · 90min | — |
+| **[Photorealistic Video Generation with Diffusion Models](https://arxiv.org/abs/2312.06662)** | 2023 | W.A.L.T — window attention over a shared image-video latent space. | after `dit`, `video-ldm` · ●●●●○ · 90min | — |
+| **[CogVideoX: Text-to-Video Diffusion Models with An Expert Transformer](https://arxiv.org/abs/2408.06072)** | 2024 | Open weights plus a 3D causal VAE and expert adaptive LayerNorm; the first fully reproducible modern stack. | after `dit`, `sd3` · ●●●○○ · 90min | [repo](https://github.com/THUDM/CogVideo) |
+| **[HunyuanVideo: A Systematic Framework For Large Video Generative Models](https://arxiv.org/abs/2412.03603)** | 2024 | 13B open weights with training infrastructure, data pipeline and scaling laws written down. | after `cogvideox` · ●●●●○ · 180min | [repo](https://github.com/Tencent/HunyuanVideo) |
+| **[Latte: Latent Diffusion Transformer for Video Generation](https://arxiv.org/abs/2401.03048)** | 2024 | Ablates four ways to factorize space-time attention in a video DiT; the clearest study of that trade-off. | after `dit` · ●●●○○ · 60min | [repo](https://github.com/Vchitect/Latte) |
+| **[LTX-Video: Realtime Video Latent Diffusion](https://arxiv.org/abs/2501.00103)** | 2024 | Pushes VAE compression to 1:192 and folds the final denoising step into the decoder to hit real time. | after `video-ldm` · ●●●○○ · 90min | [repo](https://github.com/Lightricks/LTX-Video) |
+| **[Movie Gen: A Cast of Media Foundation Models](https://arxiv.org/abs/2410.13720)** | 2024 | 30B joint video-and-audio generation with a fully documented post-training recipe — the most complete public report of its kind. | after `sd3`, `flow-matching` · ●●●●○ · 180min | — |
+| **[Pyramidal Flow Matching for Efficient Video Generative Modeling](https://arxiv.org/abs/2410.05954)** | 2024 | Runs most denoising steps at low resolution and only the last at full — a training-time answer to inference cost. | after `flow-matching` · ●●●●○ · 90min | — |
+| **[Video generation models as world simulators](https://openai.com/index/video-generation-models-as-world-simulators/)** | 2024 | No method detail, but it established spacetime patches and native-resolution training as the default framing. | after `dit` · ●○○○○ · 30min | — |
+| **[Step-Video-T2V Technical Report: The Practice, Challenges, and Future of Video Foundation Model](https://arxiv.org/abs/2502.10248)** | 2025 | 30B open model with a deep VAE and an unusually frank limitations section. | after `hunyuanvideo` · ●●●○○ · 120min | — |
+| **[Wan: Open and Advanced Large-Scale Video Generative Models](https://arxiv.org/abs/2503.20314)** | 2025 | The open base most post-training work builds on; note the report discloses no RLHF stage. | after `cogvideox` · ●●●○○ · 120min | [repo](https://github.com/Wan-Video/Wan2.1) |
 
-| Name | Paper | Code | Notes |
-| :--- | :--- | :--- | :--- |
-| **ControlVideo** | [Training-free Controllable T2V](https://arxiv.org/abs/2305.08877) | [GitHub](https://github.com/YBYBZhang/ControlVideo) | Depth/edge conditioned |
-| **Tune-A-Video** | [One-Shot Tuning](https://arxiv.org/abs/2212.11565) | [GitHub](https://github.com/showlab/Tune-A-Video) | Edit with single video |
-| **TokenFlow** | [Consistent Diffusion Editing](https://arxiv.org/abs/2307.10373) | [GitHub](https://github.com/omerbt/TokenFlow) | Temporal consistency via tokens |
-| **CoDeF** | [Content Deformation Fields](https://arxiv.org/abs/2308.07926) | [GitHub](https://github.com/qiuyu96/CoDeF) | Canonical representation |
-| **ProPainter** | [Video Inpainting with Propagation](https://arxiv.org/abs/2309.03897) | [GitHub](https://github.com/sczhou/ProPainter) | SOTA video inpainting |
+### Video VAE and Tokenizers
 
-### Human Motion & Avatar
+*The compression layer decides how many tokens a second of video costs, which sets everything downstream.*
 
-| Name | Paper | Code | Notes |
-| :--- | :--- | :--- | :--- |
-| **EMO** | [Emote Portrait Alive](https://arxiv.org/abs/2402.17485) | [GitHub](https://github.com/HumanAIGC/EMO) | Audio-driven portrait |
-| **MagicAnimate** | [Temporal Consistent Human Animation](https://arxiv.org/abs/2311.16498) | [GitHub](https://github.com/magic-research/magic-animate) | ControlNet for humans |
-| **Champ** | [Controllable & Consistent Human Animation](https://arxiv.org/abs/2403.14781) | [GitHub](https://github.com/fudan-generative-vision/champ) | 3D-aware human motion |
-| **MusePose** | [Pose-Driven Image-to-Video](https://github.com/TMElyralab/MusePose) | [GitHub](https://github.com/TMElyralab/MusePose) | Open-source character animation |
+| Paper | Year | What it contributes | Prereq · Difficulty · Time | Code |
+| :--- | :---: | :--- | :--- | :---: |
+| **[MAGVIT: Masked Generative Video Transformer](https://arxiv.org/abs/2212.05199)** | 2022 | 3D tokenizer plus masked generative training; establishes video tokens as a unit of work. | after `transformer` · ●●●●○ · 90min | — |
+| **[Language Model Beats Diffusion - Tokenizer is Key to Visual Generation](https://arxiv.org/abs/2310.05737)** | 2023 | Lookup-free quantization with a huge vocabulary; the argument that tokenizer quality dominates generator choice. | after `magvit` · ●●●●○ · 90min | — |
+| **[CV-VAE: A Compatible Video VAE for Latent Generative Video Models](https://arxiv.org/abs/2405.20279)** | 2024 | Builds a video VAE whose latent space stays compatible with existing image models, so pretrained weights survive. | after `ldm` · ●●●○○ · 60min | — |
+| **[OmniTokenizer: A Joint Image-Video Tokenizer for Visual Generation](https://arxiv.org/abs/2406.09399)** | 2024 | One tokenizer trained jointly on images and video, with a progressive training schedule. | after `magvit-v2` · ●●●○○ · 60min | — |
 
 ---
 
-## Video Understanding
+<a id="inference-efficiency"></a>
 
-### Video-LLMs
+## Inference Efficiency
 
-*Bridging visual encoders with Large Language Models for video comprehension.*
+A 3D DiT does full quadratic attention over the whole clip, once per denoising
+step, with nothing cached between steps. These four lines attack that cost from
+four different directions and compose with each other.
 
-| Name | Backbone | Features | Code |
-| :--- | :--- | :--- | :--- |
-| **Video-LLaMA 2** | LLaMA + BLIP-2 | Audio-visual understanding | [GitHub](https://github.com/DAMO-NLP-SG/VideoLLaMA2) |
-| **VideoChat 2** | Mistral/Vicuna | Multi-turn video dialogue | [GitHub](https://github.com/OpenGVLab/Ask-Anything) |
-| **LLaVA-Video** | Qwen2-VL | Strong zero-shot, long video | [GitHub](https://github.com/LLaVA-VL/LLaVA-NeXT) |
-| **Qwen2-VL** | Qwen2 | Native video understanding | [GitHub](https://github.com/QwenLM/Qwen2-VL) |
-| **InternVL 2** | InternLM | Scaling visual encoders | [GitHub](https://github.com/OpenGVLab/InternVL) |
-| **Video-LLaVA** | Vicuna | Unified image-video encoder | [GitHub](https://github.com/PKU-YuanGroup/Video-LLaVA) |
-| **mPLUG-Owl** | LLaMA | Modularized training | [GitHub](https://github.com/X-PLUG/mPLUG-Owl) |
+### Step Caching
 
-### Foundation Models
+*Adjacent denoising steps produce nearly identical features. Reuse them and the step count effectively drops, with no retraining.*
 
-*Self-supervised video representation learning.*
+| Paper | Year | What it contributes | Prereq · Difficulty · Time | Code |
+| :--- | :---: | :--- | :--- | :---: |
+| **[DeepCache: Accelerating Diffusion Models for Free](https://arxiv.org/abs/2312.00858)** | 2023 | Reuses high-level U-Net features across adjacent steps at no training cost; the origin of the caching line. | after `ddpm` · ●●○○○ · 45min | [repo](https://github.com/horseee/DeepCache) |
+| **[Adaptive Caching for Faster Video Generation with Diffusion Transformers](https://arxiv.org/abs/2411.02397)** | 2024 | Makes the caching schedule content-dependent instead of fixed. | after `teacache` · ●●●○○ · 45min | — |
+| **[Δ-DiT: A Training-Free Acceleration Method Tailored for Diffusion Transformers](https://arxiv.org/abs/2406.01125)** | 2024 | Caches residual deltas rather than features, and shows which blocks matter at which stage of denoising. | after `deepcache`, `dit` · ●●●○○ · 45min | — |
+| **[Real-Time Video Generation with Pyramid Attention Broadcast](https://arxiv.org/abs/2408.12588)** | 2024 | Broadcasts attention outputs across steps at different rates per attention type; caching adapted to video DiTs. | after `deepcache`, `latte` · ●●●○○ · 60min | [repo](https://github.com/NUS-HPC-AI-Lab/VideoSys) |
+| **[Timestep Embedding Tells: It's Time to Cache for Video Diffusion Model](https://arxiv.org/abs/2411.19108)** | 2024 | TeaCache — uses the timestep embedding to decide when a step can be skipped; currently the most deployed caching method. | after `pab` · ●●○○○ · 45min | [repo](https://github.com/ali-vilab/TeaCache) |
 
-| Name | Paper | Code | Notes |
-| :--- | :--- | :--- | :--- |
-| **VideoMAE V2** | [Scaling Video Masked Autoencoders](https://arxiv.org/abs/2303.16727) | [GitHub](https://github.com/OpenGVLab/VideoMAEv2) | Billion-scale pretraining |
-| **InternVideo 2** | [Scaling Video Foundation Models](https://arxiv.org/abs/2403.15377) | [GitHub](https://github.com/OpenGVLab/InternVideo) | 6B parameter model |
-| **UMT** | [Unmasked Teacher](https://arxiv.org/abs/2303.16727) | [GitHub](https://github.com/OpenGVLab/unmasked_teacher) | Progressive distillation |
-| **VideoPrism** | [Foundational Visual Encoder](https://arxiv.org/abs/2402.13217) | - | 36M video pretraining |
+### Sparse and Structured Attention
+
+*Attacks the quadratic term directly by exploiting spatio-temporal locality.*
+
+| Paper | Year | What it contributes | Prereq · Difficulty · Time | Code |
+| :--- | :---: | :--- | :--- | :---: |
+| **[Radial Attention: O(n log n) Sparse Attention with Energy Decay for Long Video Generation](https://arxiv.org/abs/2506.19852)** | 2025 | Exploits how attention energy decays with spatio-temporal distance to get sub-quadratic cost on long clips. | after `sta` · ●●●●○ · 90min | — |
+| **[Sparse VideoGen: Accelerating Video Diffusion Transformers with Spatial-Temporal Sparsity](https://arxiv.org/abs/2502.01776)** | 2025 | Identifies that video attention heads split into spatial and temporal types, and sparsifies each differently. | after `latte`, `flashattention2` · ●●●●○ · 90min | — |
+| **[Fast Video Generation with Sliding Tile Attention](https://arxiv.org/abs/2502.04507)** | 2025 | Replaces full 3D attention with hardware-aligned sliding tiles, turning locality into an actual kernel speedup. | after `flashattention2` · ●●●●○ · 90min | — |
+
+### Kernels and Parallelism
+
+*Making one GPU faster, then making many GPUs share one sequence.*
+
+| Paper | Year | What it contributes | Prereq · Difficulty · Time | Code |
+| :--- | :---: | :--- | :--- | :---: |
+| **[FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness](https://arxiv.org/abs/2205.14135)** | 2022 | Never materializes the attention matrix; the reason long sequences are feasible at all. | after `transformer` · ●●●●○ · 90min | — |
+| **[FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning](https://arxiv.org/abs/2307.08691)** | 2023 | Rebalances work across warps and thread blocks for roughly 2x over the original. | after `flashattention` · ●●●●○ · 60min | — |
+| **[Ring Attention with Blockwise Transformers for Near-Infinite Context](https://arxiv.org/abs/2310.01889)** | 2023 | Shards the sequence across devices and rotates KV blocks in a ring; the basis of sequence parallelism. | after `flashattention` · ●●●●○ · 90min | — |
+| **[DeepSpeed Ulysses: System Optimizations for Enabling Training of Extreme Long Sequence Transformer Models](https://arxiv.org/abs/2309.14509)** | 2023 | All-to-all sequence parallelism that shards by head instead of by block; complementary to Ring. | after `transformer` · ●●●●○ · 60min | — |
+| **[DistriFusion: Distributed Parallel Inference for High-Resolution Diffusion Models](https://arxiv.org/abs/2402.19481)** | 2024 | Hides communication behind computation by reusing the previous step's activations at patch boundaries. | after `ldm` · ●●●●○ · 60min | — |
+| **[FlashAttention-3: Fast and Accurate Attention with Asynchrony and Low-precision](https://arxiv.org/abs/2407.08608)** | 2024 | Uses Hopper asynchrony and FP8; the current ceiling for exact attention. | after `flashattention2` · ●●●●● · 90min | — |
+| **[SageAttention: Accurate 8-Bit Attention for Plug-and-play Inference Acceleration](https://arxiv.org/abs/2410.02367)** | 2024 | INT8 attention that is accurate enough to drop in without retraining. | after `flashattention2` · ●●●●○ · 60min | [repo](https://github.com/thu-ml/SageAttention) |
+| **[SageAttention2: Efficient Attention with Thorough Outlier Smoothing and Per-thread INT4 Quantization](https://arxiv.org/abs/2411.10958)** | 2024 | Pushes attention quantization to INT4 with per-thread outlier handling. | after `sageattention` · ●●●●● · 60min | — |
+| **[xDiT: an Inference Engine for Diffusion Transformers (DiTs) with Massive Parallelism](https://arxiv.org/abs/2411.01738)** | 2024 | Combines sequence, pipeline and CFG parallelism for multi-GPU DiT inference; the practical entry point. | after `ring-attention`, `ulysses` · ●●●○○ · 60min | [repo](https://github.com/xdit-project/xDiT) |
+
+### Few-Step Distillation
+
+*The only lever that changes the step count itself. Everything else makes a step cheaper; this removes steps.*
+
+| Paper | Year | What it contributes | Prereq · Difficulty · Time | Code |
+| :--- | :---: | :--- | :--- | :---: |
+| **[Progressive Distillation for Fast Sampling of Diffusion Models](https://arxiv.org/abs/2202.00512)** | 2022 | Repeatedly halves the step count by distilling a teacher into a student; the first practical few-step method. | after `ddim` · ●●●○○ · 60min | — |
+| **[Adversarial Diffusion Distillation](https://arxiv.org/abs/2311.17042)** | 2023 | SDXL-Turbo — adds an adversarial loss so one-step output stops looking blurry. | after `progressive-distillation` · ●●●○○ · 60min | — |
+| **[Consistency Models](https://arxiv.org/abs/2303.01469)** | 2023 | Trains a model whose output is constant along a probability-flow trajectory, enabling one-step sampling. | after `score-sde` · ●●●●○ · 120min | — |
+| **[One-step Diffusion with Distribution Matching Distillation](https://arxiv.org/abs/2311.18828)** | 2023 | Matches distributions rather than trajectories, which is why it degrades less than trajectory distillation. | after `consistency-models` · ●●●●○ · 90min | — |
+| **[Latent Consistency Models: Synthesizing High-Resolution Images with Few-Step Inference](https://arxiv.org/abs/2310.04378)** | 2023 | Brings consistency distillation to latent space, where it became usable in production. | after `consistency-models`, `ldm` · ●●●○○ · 60min | — |
+| **[From Slow Bidirectional to Fast Autoregressive Video Diffusion Models](https://arxiv.org/abs/2412.07772)** | 2024 | CausVid — distills a bidirectional video model into a causal one so frames can stream out. | after `dmd2` · ●●●●○ · 90min | — |
+| **[Improved Distribution Matching Distillation for Fast Image Synthesis](https://arxiv.org/abs/2405.14867)** | 2024 | Drops the regression loss and adds a GAN term; the strongest general-purpose few-step recipe. | after `dmd` · ●●●●○ · 90min | [repo](https://github.com/tianweiy/DMD2) |
+| **[Diffusion Adversarial Post-Training for One-Step Video Generation](https://arxiv.org/abs/2501.08316)** | 2025 | Adversarial post-training that reaches one-step 1280x720 video generation. | after `add` · ●●●●○ · 90min | — |
+| **[Self Forcing: Bridging the Train-Test Gap in Autoregressive Video Diffusion](https://arxiv.org/abs/2506.08009)** | 2025 | Trains on self-generated rollouts to kill exposure bias; real-time single-GPU video at modest distillation cost. | after `causvid` · ●●●●○ · 90min | — |
+
+### Quantization and Memory
+
+*Weight precision decides whether a model fits on a consumer card at all.*
+
+| Paper | Year | What it contributes | Prereq · Difficulty · Time | Code |
+| :--- | :---: | :--- | :--- | :---: |
+| **[GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers](https://arxiv.org/abs/2210.17323)** | 2022 | Second-order weight rounding that made 4-bit weights respectable. | ●●●●○ · 60min | — |
+| **[SmoothQuant: Accurate and Efficient Post-Training Quantization for Large Language Models](https://arxiv.org/abs/2211.10438)** | 2022 | Migrates activation outliers into the weights so both sides become quantizable. | ●●●○○ · 60min | — |
+| **[AWQ: Activation-aware Weight Quantization for LLM Compression and Acceleration](https://arxiv.org/abs/2306.00978)** | 2023 | Protects the small fraction of salient weights identified by activation magnitude; the scheme behind most 4-bit text encoders. | after `smoothquant` · ●●●○○ · 60min | — |
+| **[Q-Diffusion: Quantizing Diffusion Models](https://arxiv.org/abs/2302.04304)** | 2023 | Shows why per-timestep activation ranges break naive PTQ on diffusion models. | after `ddpm` · ●●●○○ · 60min | — |
+| **[SVDQuant: Absorbing Outliers by Low-Rank Components for 4-Bit Diffusion Models](https://arxiv.org/abs/2411.05007)** | 2024 | Routes outliers into a low-rank branch so the main path can be 4-bit; the current best quality-per-byte for diffusion. | after `awq`, `q-diffusion` · ●●●●○ · 90min | [repo](https://github.com/mit-han-lab/nunchaku) |
+| **[ViDiT-Q: Efficient and Accurate Quantization of Diffusion Transformers for Image and Video Generation](https://arxiv.org/abs/2406.02540)** | 2024 | Quantization tailored to video DiTs, where error accumulates across both steps and frames. | after `q-diffusion`, `dit` · ●●●●○ · 60min | — |
 
 ---
 
-## Infrastructure & Engineering
+<a id="post-training"></a>
 
-### Inference Optimization
+## Post-Training
 
-*Techniques to run video models efficiently on consumer GPUs.*
+The main quality lever separating frontier commercial models from open bases.
+Open technical reports rarely disclose an RLHF stage; this is where the gap lives.
 
-| Technique | Paper/Link | Code | Notes |
-| :--- | :--- | :--- | :--- |
-| **LCM** | [Latent Consistency Models](https://arxiv.org/abs/2310.04378) | [GitHub](https://github.com/luosiallen/latent-consistency-model) | 4-step generation |
-| **SDXL-Turbo** | [Adversarial Diffusion Distillation](https://arxiv.org/abs/2311.17042) | [HuggingFace](https://huggingface.co/stabilityai/sdxl-turbo) | 1-step generation |
-| **PAB** | [Pyramid Attention Broadcast](https://arxiv.org/abs/2408.12588) | [GitHub](https://github.com/NUS-HPC-AI-Lab/VideoSys) | Real-time video diffusion |
-| **TensorRT** | [NVIDIA TensorRT](https://github.com/NVIDIA/TensorRT) | [GitHub](https://github.com/NVIDIA/TensorRT) | Production inference |
-| **DeepCache** | [Accelerating Diffusion](https://arxiv.org/abs/2312.00858) | [GitHub](https://github.com/horseee/DeepCache) | Cache-based acceleration |
+### Reward Models and Preference Optimization
 
-### Serving Frameworks
+*Reward modelling, DPO variants, and online RL adapted to flow matching.*
 
-| Name | Description | Code |
-| :--- | :--- | :--- |
-| **vLLM** | High-throughput LLM serving, multimodal support | [GitHub](https://github.com/vllm-project/vllm) |
-| **SGLang** | Efficient structured generation | [GitHub](https://github.com/sgl-project/sglang) |
-| **Xinference** | Distributed model serving | [GitHub](https://github.com/xorbitsai/inference) |
-| **ComfyUI** | Node-based video workflow | [GitHub](https://github.com/comfyanonymous/ComfyUI) |
-| **Diffusers** | Hugging Face diffusion library | [GitHub](https://github.com/huggingface/diffusers) |
+| Paper | Year | What it contributes | Prereq · Difficulty · Time | Code |
+| :--- | :---: | :--- | :--- | :---: |
+| **[Training Diffusion Models with Reinforcement Learning](https://arxiv.org/abs/2305.13301)** | 2023 | Frames denoising as a multi-step MDP so policy gradient applies directly. | after `ddpm` · ●●●●○ · 90min | — |
+| **[Diffusion Model Alignment Using Direct Preference Optimization](https://arxiv.org/abs/2311.12908)** | 2023 | Ports DPO to diffusion; the cheapest preference-alignment method that reliably works. | after `dpo` · ●●●○○ · 60min | — |
+| **[Direct Preference Optimization: Your Language Model is Secretly a Reward Model](https://arxiv.org/abs/2305.18290)** | 2023 | Removes the separate reward model and RL loop from preference training; read before any diffusion-DPO variant. | ●●●○○ · 90min | — |
+| **[Video Diffusion Alignment via Reward Gradients](https://arxiv.org/abs/2407.08737)** | 2024 | Backpropagates reward gradients through the sampler; far more sample-efficient than policy gradient when the reward is differentiable. | after `ddpo` · ●●●●○ · 90min | — |
+| **[VideoDPO: Omni-Preference Alignment for Video Diffusion Generation](https://arxiv.org/abs/2412.14167)** | 2024 | Builds the preference pairs automatically from the model's own samples, removing the human-labeling bottleneck. | after `diffusion-dpo` · ●●●○○ · 60min | — |
+| **[VisionReward: Fine-Grained Multi-Dimensional Human Preference Learning for Image and Video Generation](https://arxiv.org/abs/2412.21059)** | 2024 | An interpretable checklist reward model instead of a scalar score, which makes reward hacking visible. | after `videoreward` · ●●●○○ · 60min | — |
+| **[DanceGRPO: Unleashing GRPO on Visual Generation](https://arxiv.org/abs/2505.07818)** | 2025 | The strongest published evidence that online RL moves open video models a long way on motion quality. | after `flow-grpo` · ●●●●○ · 90min | — |
+| **[Flow-GRPO: Training Flow Matching Models via Online RL](https://arxiv.org/abs/2505.05470)** | 2025 | Converts the flow ODE to an SDE so online RL has the stochasticity it needs. | after `flow-matching`, `ddpo` · ●●●●○ · 90min | — |
+| **[Improving Video Generation with Human Feedback](https://arxiv.org/abs/2501.13918)** | 2025 | VideoAlign — 182K preference triplets and a multi-dimensional reward model separating visual, motion and alignment quality. | after `diffusion-dpo` · ●●●○○ · 90min | [repo](https://github.com/KwaiVGI/VideoAlign) |
 
 ---
 
-## Advanced Topics
+<a id="long-video-and-evaluation"></a>
 
-### Post-Training & Alignment (RLHF)
+## Long Video and Evaluation
 
-*The main quality lever separating frontier commercial models (Seedance, Veo, Kling) from open-source bases — reward models + preference optimization for video diffusion.*
+Extending past a single short shot, and how to tell whether any of it worked.
 
-| Name | Paper | Code | Notes |
-| :--- | :--- | :--- | :--- |
-| **VideoAlign / VideoReward** | [Improving Video Generation with Human Feedback](https://arxiv.org/abs/2501.13918) | [GitHub](https://github.com/KwaiVGI/VideoAlign) | 182K preference triplets; multi-dim RM (VQ/MQ/TA); Flow-DPO / Flow-RWR / Flow-NRG (NeurIPS 2025) |
-| **VisionReward** | [Fine-Grained Multi-Dimensional Preference Learning](https://arxiv.org/abs/2412.21059) | [GitHub](https://github.com/THUDM/VisionReward) | Interpretable checklist RM (64 binary questions); MPO dominant-pair training |
-| **DanceGRPO** | [Unleashing GRPO on Visual Generation](https://arxiv.org/abs/2505.07818) | [GitHub](https://github.com/XueZeyue/DanceGRPO) | Online GRPO for diffusion & rectified flow; +181% motion quality on HunyuanVideo |
-| **Flow-GRPO** | [Training Flow Matching Models via Online RL](https://arxiv.org/abs/2505.05470) | [GitHub](https://github.com/yifan123/flow_grpo) | ODE→SDE conversion + denoising reduction for RL on flow models |
-| **VideoDPO** | [Omni-Preference Alignment for Video Diffusion](https://arxiv.org/abs/2412.14167) | [GitHub](https://github.com/CIntellifusion/VideoDPO) | Fully automatic preference pairs (OmniScore); runs on 4×A100 |
-| **Seedance 1.0** | [Technical Report](https://arxiv.org/abs/2506.09113) | - | Reference recipe: 3 specialized RMs (foundational/motion/aesthetic), direct reward maximization |
-| **HunyuanVideo 1.5** | [Technical Report](https://arxiv.org/abs/2511.18870) | [GitHub](https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5) | Open post-training blueprint: SFT → offline DPO → online MixGRPO with VLM reward |
-| **ContentV** | [Efficient Training with Limited Compute](https://arxiv.org/abs/2506.05343) | [GitHub](https://github.com/bytedance/ContentV) | Annotation-free RLHF via differentiable reward backprop; 85.14 VBench on modest compute |
+### Long Video and Multi-Shot
 
-### Few-Step Distillation & Real-Time Generation
+*Length breaks memory and identity consistency before it breaks quality.*
 
-*Closing the inference-speed gap: from 50-step diffusion to real-time streaming.*
+| Paper | Year | What it contributes | Prereq · Difficulty · Time | Code |
+| :--- | :---: | :--- | :--- | :---: |
+| **[StreamingT2V: Consistent, Dynamic, and Extendable Long Video Generation from Text](https://arxiv.org/abs/2403.14773)** | 2024 | Short-term and long-term memory modules that keep identity stable across autoregressive extension. | after `video-ldm` · ●●●○○ · 60min | — |
+| **[Frame Context Packing and Drift Prevention in Next-Frame-Prediction Video Diffusion Models](https://arxiv.org/abs/2504.12626)** | 2025 | FramePack — compresses context frames by importance so length stops driving memory. | after `causvid` · ●●●○○ · 60min | — |
+| **[Long Context Tuning for Video Generation](https://arxiv.org/abs/2503.10589)** | 2025 | Extends a single-shot model to scene-level multi-shot with no added parameters. | after `wan` · ●●●○○ · 60min | — |
 
-| Name | Paper | Code | Notes |
-| :--- | :--- | :--- | :--- |
-| **Self Forcing** | [Bridging the Train-Test Gap in Autoregressive Video Diffusion](https://arxiv.org/abs/2506.08009) | [GitHub](https://github.com/guandeh17/Self-Forcing) | AR rollout + KV cache + DMD; 17 FPS on one H100; converges in ~4 H100-days on Wan2.1-1.3B |
-| **Seaweed-APT** | [Adversarial Post-Training for One-Step Video Generation](https://arxiv.org/abs/2501.08316) | - | One-step 720p24 real-time generation (ICML 2025) |
-| **CausVid** | [From Slow Bidirectional to Fast Autoregressive](https://arxiv.org/abs/2412.07772) | [GitHub](https://github.com/tianweiy/CausVid) | Bidirectional teacher → causal student distillation |
-| **Hyper-SD / TSCD** | [Trajectory Segmented Consistency Distillation](https://arxiv.org/abs/2404.13686) | [HuggingFace](https://huggingface.co/ByteDance/Hyper-SD) | The distillation family behind Seedance's ~10x speedup |
+### Evaluation
 
-### Temporal Consistency
+*Automatic benchmarks correlate imperfectly with human preference. Know each one's blind spots before quoting it.*
 
-*Ensuring objects don't morph randomly over time - the core challenge of video generation.*
+| Paper | Year | What it contributes | Prereq · Difficulty · Time | Code |
+| :--- | :---: | :--- | :--- | :---: |
+| **[EvalCrafter: Benchmarking and Evaluating Large Video Generation Models](https://arxiv.org/abs/2310.11440)** | 2023 | 17 objective metrics calibrated against human opinion, with the calibration gap reported honestly. | ●●○○○ · 45min | — |
+| **[VBench: Comprehensive Benchmark Suite for Video Generative Models](https://arxiv.org/abs/2311.17982)** | 2023 | Decomposes video quality into 16 measurable dimensions; the default automatic benchmark, with known blind spots. | ●●○○○ · 60min | [repo](https://github.com/Vchitect/VBench) |
+| **[T2V-CompBench: A Comprehensive Benchmark for Compositional Text-to-video Generation](https://arxiv.org/abs/2407.14505)** | 2024 | Targets compositionality — attribute binding, spatial relations, numeracy — where general benchmarks saturate. | after `vbench` · ●●○○○ · 45min | — |
 
-- 📖 [FreeNoise: Noise Rescheduling for Video Consistency](https://arxiv.org/abs/2310.15169)
-- 📖 [VideoComposer: Compositional Video Synthesis](https://arxiv.org/abs/2306.02018)
-- 📖 [Make-Your-Video: Customized Video Generation](https://arxiv.org/abs/2306.00943)
+---
 
-### Long Video & Multi-Shot Generation
+## Adjacent Areas
 
-*Moving beyond 4-10 seconds to minutes of coherent, multi-shot narrative video.*
+*Out of scope here, kept as a pointer so the boundary is explicit.*
 
-| Name | Paper | Code | Notes |
-| :--- | :--- | :--- | :--- |
-| **LCT** | [Long Context Tuning for Video Generation](https://arxiv.org/abs/2503.10589) | [Project](https://guoyww.github.io/projects/long-context-video/) | Single-shot DiT → scene-level multi-shot via context expansion, no new params (ICCV 2025) |
-| **HoloCine** | [Holistic Generation of Cinematic Multi-Shot Narratives](https://arxiv.org/abs/2510.20822) | [GitHub](https://github.com/yihao-meng/HoloCine) | Wan 2.2 fine-tuned on 400K multi-shot samples (CVPR 2026) |
-| **StreamingT2V** | [Streaming Video Synthesis](https://arxiv.org/abs/2403.14773) | [GitHub](https://github.com/Picsart-AI-Research/StreamingT2V) | Infinite length generation |
-| **FreeNoise** | [Tuning-free Long Video](https://arxiv.org/abs/2310.15169) | [GitHub](https://github.com/AILab-CVC/FreeNoise) | Extended context window |
-| **Gen-L-Video** | [Multitext to Long Video](https://arxiv.org/abs/2305.18264) | [GitHub](https://github.com/G-U-N/Gen-L-Video) | Story-based generation |
+**Video understanding / Video-LLMs** — a different problem (reading video rather than
+making it) with its own literature and its own curated lists. This repo does not track it.
 
-### 4D Generation (3D + Time)
+| Where to go | Covers |
+| :--- | :--- |
+| [Awesome-LLMs-for-Video-Understanding](https://github.com/yunlong10/Awesome-LLMs-for-Video-Understanding) | Video-LLMs, benchmarks, instruction tuning |
+| [Awesome-Multimodal-Large-Language-Models](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models) | Multimodal LLMs and their video evaluations |
+| [MMAction2](https://github.com/open-mmlab/mmaction2) | Action recognition, temporal detection (toolbox, not a list) |
 
-*Generating dynamic 3D content - the frontier of generative AI.*
+The one exception we do track is **visual tokenizers** (see
+[Video VAE and Tokenizers](#video-vae-and-tokenizers)) — they sit on both sides of the
+boundary, and the compression ratio they achieve is a first-order constraint on
+generation cost.
 
-| Name | Paper | Code | Notes |
-| :--- | :--- | :--- | :--- |
-| **DreamGaussian4D** | [Gaussian Splatting for 4D](https://arxiv.org/abs/2312.17142) | [GitHub](https://github.com/jiawei-ren/dreamgaussian4d) | Dynamic 3D Gaussians |
-| **4D-fy** | [Text-to-4D via Hybrid SDS](https://arxiv.org/abs/2311.17984) | [GitHub](https://github.com/sherwinbahmani/4dfy) | 4D from text |
-| **Consistent4D** | [Consistent Dynamic 3D](https://arxiv.org/abs/2311.02848) | [GitHub](https://github.com/yanqinJiang/Consistent4D) | Video to 4D |
-| **GaussianFlow** | [Splatting for 4D Reconstruction](https://arxiv.org/abs/2312.03431) | [GitHub](https://github.com/Zerg-Overmind/GaussianFlow) | High-quality 4D |
 
 ---
 
 ## Research Notes
 
-*In-house deep-dive analyses (sources cited, claims adversarially verified where marked).*
+*In-house deep-dive analyses. Sources cited; claims adversarially verified where marked.*
 
-- 📂 [**Seedance vs Open-Source Gap** (topic series)](research/seedance-gap/) (2026-07) - *Root-cause analysis of the Seedance-vs-open-source quality gap: post-training (multi-dim reward-model RLHF) and data curation dominate, not architecture. 8-part series (updated 2026-08): [benchmark gap](research/seedance-gap/01-benchmark-gap.md) · [Seedance recipe](research/seedance-gap/02-seedance-recipe.md) · [open-source landscape](research/seedance-gap/03-open-source-landscape.md) · [post-training methods](research/seedance-gap/04-posttraining-methods.md) · [distillation & multi-shot](research/seedance-gap/05-distillation-multishot.md) · [roadmap & feasibility](research/seedance-gap/06-roadmap-feasibility.md) · [MiniMax H3](research/seedance-gap/07-minimax-h3.md) · [evaluation loop](research/seedance-gap/08-evaluation-loop.md).*
+- 📂 [**Seedance vs Open-Source Gap** (topic series)](research/seedance-gap/) (2026-07, updated 2026-08) — *Root-cause analysis of the quality gap between frontier commercial video models and open-source bases. Main finding: the gap is driven by **post-training and data curation**, not architecture.*
+  8 parts: [benchmark gap](research/seedance-gap/01-benchmark-gap.md) · [Seedance recipe](research/seedance-gap/02-seedance-recipe.md) · [open-source landscape](research/seedance-gap/03-open-source-landscape.md) · [post-training methods](research/seedance-gap/04-posttraining-methods.md) · [distillation & multi-shot](research/seedance-gap/05-distillation-multishot.md) · [roadmap & feasibility](research/seedance-gap/06-roadmap-feasibility.md) · [MiniMax H3](research/seedance-gap/07-minimax-h3.md) · [evaluation loop](research/seedance-gap/08-evaluation-loop.md)
+
 
 ---
 
@@ -295,33 +314,32 @@
 | :--- | :--- | :--- | :--- | :--- |
 | **WebVid-10M** | Text-Video | 10M clips | Large-scale weakly captioned | [GitHub](https://github.com/m-bain/webvid) |
 | **Panda-70M** | Text-Video | 70M clips | High-quality auto-captions | [GitHub](https://github.com/snap-research/Panda-70M) |
-| **InternVid** | Text-Video | 234M clips | Largest public video-text | [GitHub](https://github.com/OpenGVLab/InternVideo/tree/main/Data/InternVid) |
+| **InternVid** | Text-Video | 234M clips | Largest public video-text corpus | [GitHub](https://github.com/OpenGVLab/InternVideo/tree/main/Data/InternVid) |
 | **HD-VILA-100M** | Text-Video | 100M clips | High resolution clips | [GitHub](https://github.com/microsoft/XPretrain/tree/main/hd-vila-100m) |
-| **Kinetics-700** | Action | 650K clips | Action recognition benchmark | [DeepMind](https://www.deepmind.com/open-source/kinetics) |
-| **Ego4D** | Egocentric | 3.6K hrs | First-person video understanding | [Website](https://ego4d-data.org/) |
-| **OpenVid-1M** | Text-Video | 1M clips | Open-source high quality | [GitHub](https://github.com/NJU-PCALab/OpenVid-1M) |
+| **OpenVid-1M** | Text-Video | 1M clips | Open-source, quality filtered | [GitHub](https://github.com/NJU-PCALab/OpenVid-1M) |
 
 ### Benchmarks
 
 | Name | Purpose | Link |
 | :--- | :--- | :--- |
-| **VBench** | Comprehensive video generation evaluation | [GitHub](https://github.com/Vchitect/VBench) |
-| **EvalCrafter** | T2V generation quality assessment | [GitHub](https://github.com/EvalCrafter/EvalCrafter) |
-| **FVD** | Fréchet Video Distance - generative quality metric | [Paper](https://arxiv.org/abs/1812.01717) |
-| **VideoMME** | Video-LLM understanding evaluation | [GitHub](https://github.com/BradyFU/Video-MME) |
-| **MVBench** | Multi-task video understanding | [GitHub](https://github.com/OpenGVLab/Ask-Anything/tree/main/video_chat2) |
-| **FETV** | Fine-grained text-video evaluation | [GitHub](https://github.com/llyx97/FETV) |
+| **VBench** | 16-dimension automatic evaluation | [GitHub](https://github.com/Vchitect/VBench) |
+| **EvalCrafter** | 17 metrics calibrated to human opinion | [GitHub](https://github.com/EvalCrafter/EvalCrafter) |
+| **T2V-CompBench** | Compositional generation | [GitHub](https://github.com/KaiyueSun98/T2V-CompBench) |
+| **FVD** | Fréchet Video Distance | [Paper](https://arxiv.org/abs/1812.01717) |
+| **Artificial Analysis** | Human-preference Elo leaderboard | [Website](https://artificialanalysis.ai/video) |
 
 ### Tools & Libraries
 
 | Name | Description | Link |
 | :--- | :--- | :--- |
-| **Diffusers** | 🤗 Hugging Face diffusion library | [GitHub](https://github.com/huggingface/diffusers) |
-| **MMAction2** | OpenMMLab video understanding | [GitHub](https://github.com/open-mmlab/mmaction2) |
-| **PyTorchVideo** | Meta's video understanding library | [GitHub](https://github.com/facebookresearch/pytorchvideo) |
-| **Decord** | Efficient GPU video loading | [GitHub](https://github.com/dmlc/decord) |
-| **Video-FocalNets** | Spatiotemporal focal modulation | [GitHub](https://github.com/TalalWasim/Video-FocalNets) |
-| **TimeSformer** | Divided space-time attention | [GitHub](https://github.com/facebookresearch/TimeSformer) |
+| **Diffusers** | Reference implementations and schedulers | [GitHub](https://github.com/huggingface/diffusers) |
+| **k-diffusion** | Where most practical samplers originate | [GitHub](https://github.com/crowsonkb/k-diffusion) |
+| **ComfyUI** | Node-based inference graph, de facto deployment target | [GitHub](https://github.com/comfyanonymous/ComfyUI) |
+| **FastVideo** | Sparse attention + distillation, production oriented | [GitHub](https://github.com/hao-ai-lab/FastVideo) |
+| **xDiT** | Multi-GPU parallel inference for DiTs | [GitHub](https://github.com/xdit-project/xDiT) |
+| **Nunchaku** | SVDQuant 4-bit inference engine | [GitHub](https://github.com/mit-han-lab/nunchaku) |
+| **Decord** | Efficient video decoding | [GitHub](https://github.com/dmlc/decord) |
+
 
 ---
 
@@ -355,25 +373,29 @@
 
 ---
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
-
-### Guidelines
-
-1. Ensure any new resources are properly categorized
-2. Include working links to papers, code repositories, and project pages
-3. Provide brief descriptions for new entries
-4. Keep the formatting consistent with existing entries
 
 ---
 
-## Star History
+## Contributing
 
-If you find this resource helpful, please consider giving it a ⭐!
+Contributions are welcome. **Edit [`data/papers.yaml`](data/papers.yaml), not `README.md`** —
+the README is generated and your changes to it will be overwritten.
+
+```bash
+python scripts/verify.py       # check arXiv ids, titles and the prereq graph
+python scripts/gen_readme.py   # regenerate README.md
+```
+
+### Guidelines
+
+1. `desc` says **what the paper contributes**, in one line. "A method for X" is not a description.
+2. Fill in `prereq`. An entry with no honest prerequisites is rare; one with the wrong ones is worse than none.
+3. Give the arXiv id without a version suffix. `verify.py` will confirm the title against the API.
+4. Keep the scope: generative video, inference efficiency, post-training.
+5. `difficulty` and `minutes` are rough. Err toward honest rather than encouraging.
 
 ---
 
 <p align="center">
-  <i>Curated with ❤️ for the Video AI research community</i>
+  <i>Curated for people who read papers to solve a problem.</i>
 </p>

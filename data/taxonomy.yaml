@@ -1,0 +1,98 @@
+# Section tree for the generated README.
+# `key` must match a paper's `section`. Order here is the order in the README.
+# `blurb` is the italic line under the heading.
+# `columns` picks the table shape: `paper` (Paper | Year | What it contributes | Code)
+#                                  `compact` (Paper | Year | What it contributes)
+
+groups:
+
+- title: Foundations
+  anchor: foundations
+  intro: |
+    The minimum you need before any video paper makes sense. Read in listed order —
+    each entry's `prereq` in `data/papers.yaml` encodes the dependency.
+  sections:
+  - key: foundations
+    title: Diffusion, Flow and Sampling
+    blurb: Modern video models train with flow matching, not the DDPM objective. Skipping this section is the single most common reason later papers stop parsing.
+    columns: paper
+
+- title: Core Architectures
+  anchor: core-architectures
+  intro: |
+    How the denoiser is built. Everything current descends from DiT plus a joint
+    multimodal attention scheme.
+  sections:
+  - key: architectures
+    title: Diffusion Transformers
+    blurb: The backbone. adaLN-Zero conditioning and MMDiT-style joint attention are the two ideas that carry into video.
+    columns: paper
+
+- title: Video Generation
+  anchor: video-generation
+  intro: |
+    The models themselves, oldest first. For recent ones the technical report is
+    usually worth more than the architecture diagram — read them for data pipelines,
+    training infrastructure and post-training recipes.
+  sections:
+  - key: video-gen
+    title: Models and Technical Reports
+    blurb: Where the field actually is. Open-weight entries are marked in the notes.
+    columns: paper
+  - key: video-vae
+    title: Video VAE and Tokenizers
+    blurb: The compression layer decides how many tokens a second of video costs, which sets everything downstream.
+    columns: paper
+
+- title: Inference Efficiency
+  anchor: inference-efficiency
+  intro: |
+    A 3D DiT does full quadratic attention over the whole clip, once per denoising
+    step, with nothing cached between steps. These four lines attack that cost from
+    four different directions and compose with each other.
+  sections:
+  - key: eff-caching
+    title: Step Caching
+    blurb: Adjacent denoising steps produce nearly identical features. Reuse them and the step count effectively drops, with no retraining.
+    columns: paper
+  - key: eff-sparse
+    title: Sparse and Structured Attention
+    blurb: Attacks the quadratic term directly by exploiting spatio-temporal locality.
+    columns: paper
+  - key: eff-systems
+    title: Kernels and Parallelism
+    blurb: Making one GPU faster, then making many GPUs share one sequence.
+    columns: paper
+  - key: eff-distill
+    title: Few-Step Distillation
+    blurb: The only lever that changes the step count itself. Everything else makes a step cheaper; this removes steps.
+    columns: paper
+  - key: quantization
+    title: Quantization and Memory
+    blurb: Weight precision decides whether a model fits on a consumer card at all.
+    columns: paper
+
+- title: Post-Training
+  anchor: post-training
+  intro: |
+    The main quality lever separating frontier commercial models from open bases.
+    Open technical reports rarely disclose an RLHF stage; this is where the gap lives.
+  sections:
+  - key: post-training
+    title: Reward Models and Preference Optimization
+    blurb: Reward modelling, DPO variants, and online RL adapted to flow matching.
+    columns: paper
+
+- title: Long Video and Evaluation
+  anchor: long-video-and-evaluation
+  intro: |
+    Extending past a single short shot, and how to tell whether any of it worked.
+  sections:
+  - key: long-video
+    title: Long Video and Multi-Shot
+    blurb: Length breaks memory and identity consistency before it breaks quality.
+    columns: paper
+  - key: evaluation
+    title: Evaluation
+    blurb: Automatic benchmarks correlate imperfectly with human preference. Know each one's blind spots before quoting it.
+    columns: paper
